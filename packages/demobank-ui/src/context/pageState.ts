@@ -31,7 +31,6 @@ const initial: Type = {
   pageState: {
     isLoggedIn: false,
     isRawPayto: false,
-    showPublicHistories: false,
     withdrawalInProgress: false,
   },
   pageStateSetter: () => {
@@ -62,7 +61,6 @@ function usePageState(
   state: PageStateType = {
     isLoggedIn: false,
     isRawPayto: false,
-    showPublicHistories: false,
     withdrawalInProgress: false,
   },
 ): [PageStateType, StateUpdater<PageStateType>] {
@@ -102,7 +100,6 @@ function usePageState(
 export interface PageStateType {
   isLoggedIn: boolean;
   isRawPayto: boolean;
-  showPublicHistories: boolean;
   withdrawalInProgress: boolean;
   error?: {
     description?: string;

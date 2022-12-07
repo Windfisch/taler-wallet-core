@@ -16,6 +16,7 @@
 
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { Fragment, h, VNode } from "preact";
+import { route } from "preact-router";
 import { StateUpdater } from "preact/hooks";
 import useSWR, { SWRConfig } from "swr";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
@@ -25,25 +26,10 @@ import { BankFrame } from "./BankFrame.js";
 import { Transactions } from "./Transactions.js";
 
 export function PublicHistoriesPage(): VNode {
-  const { pageState, pageStateSetter } = usePageContext();
-  // const { i18n } = useTranslationContext();
   return (
     <SWRWithoutCredentials baseUrl={getBankBackendBaseUrl()}>
       <BankFrame>
-        <PublicHistories pageStateSetter={pageStateSetter}>
-          <br />
-          <a
-            class="pure-button"
-            onClick={() => {
-              pageStateSetter((prevState: PageStateType) => ({
-                ...prevState,
-                showPublicHistories: false,
-              }));
-            }}
-          >
-            Go back
-          </a>
-        </PublicHistories>
+        <PublicHistories />
       </BankFrame>
     </SWRWithoutCredentials>
   );
@@ -71,7 +57,8 @@ function SWRWithoutCredentials(Props: any): VNode {
 /**
  * Show histories of public accounts.
  */
-function PublicHistories(Props: any): VNode {
+function PublicHistories(): VNode {
+  const { pageState, pageStateSetter } = usePageContext();
   const [showAccount, setShowAccount] = useShowPublicAccount();
   const { data, error } = useSWR("access-api/public-accounts");
   const { i18n } = useTranslationContext();
@@ -81,10 +68,10 @@ function PublicHistories(Props: any): VNode {
     switch (error.status) {
       case 404:
         console.log("public accounts: 404", error);
-        Props.pageStateSetter((prevState: PageStateType) => ({
+        route("/account");
+        pageStateSetter((prevState: PageStateType) => ({
           ...prevState,
 
-          showPublicHistories: false,
           error: {
             title: i18n.str`List of public accounts was not found.`,
             debug: JSON.stringify(error),
@@ -93,10 +80,10 @@ function PublicHistories(Props: any): VNode {
         break;
       default:
         console.log("public accounts: non-404 error", error);
-        Props.pageStateSetter((prevState: PageStateType) => ({
+        route("/account");
+        pageStateSetter((prevState: PageStateType) => ({
           ...prevState,
 
-          showPublicHistories: false,
           error: {
             title: i18n.str`List of public accounts could not be retrieved.`,
             debug: JSON.stringify(error),
@@ -155,7 +142,10 @@ function PublicHistories(Props: any): VNode {
             ) : (
               <p>No public transactions found.</p>
             )}
-            {Props.children}
+            <br />
+            <a href="/account" class="pure-button">
+              Go back
+            </a>
           </div>
         </article>
       </section>

@@ -75,13 +75,7 @@ export function BankFrame(Props: any): VNode {
                 This part of the demo shows how a bank that supports Taler
                 directly would work. In addition to using your own bank account,
                 you can also see the transaction history of some{" "}
-                <a
-                  href="/public-accounts"
-                  onClick={goPublicAccounts(pageStateSetter)}
-                >
-                  Public Accounts
-                </a>
-                .
+                <a href="/public-accounts">Public Accounts</a>.
               </i18n.Translate>
             </p>,
           )}
@@ -132,17 +126,6 @@ function maybeDemoContent(content: VNode): VNode {
     return content;
   }
   return <Fragment />;
-}
-
-/**
- * Bring the state to show the public accounts page.
- */
-function goPublicAccounts(pageStateSetter: StateUpdater<PageStateType>) {
-  return () =>
-    pageStateSetter((prevState) => ({
-      ...prevState,
-      showPublicHistories: true,
-    }));
 }
 
 function ErrorBanner(Props: any): VNode | null {
