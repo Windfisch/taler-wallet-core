@@ -214,32 +214,6 @@ function useWireTransferRequestType(
 }
 
 /**
- * Stores in the state a object containing a 'username'
- * and 'password' field, in order to avoid losing the
- * handle of the data entered by the user in <input> fields.
- */
-type CredentialsRequestTypeOpt = CredentialsRequestType | undefined;
-function useCredentialsRequestType(
-  state?: CredentialsRequestType,
-): [CredentialsRequestTypeOpt, StateUpdater<CredentialsRequestTypeOpt>] {
-  const ret = hooks.useLocalStorage(
-    "credentials-request-state",
-    JSON.stringify(state),
-  );
-  const retObj: CredentialsRequestTypeOpt = ret[0]
-    ? JSON.parse(ret[0])
-    : ret[0];
-  const retSetter: StateUpdater<CredentialsRequestTypeOpt> = function (val) {
-    const newVal =
-      val instanceof Function
-        ? JSON.stringify(val(retObj))
-        : JSON.stringify(val);
-    ret[1](newVal);
-  };
-  return [retObj, retSetter];
-}
-
-/**
  * Request preparators.
  *
  * These functions aim at sanitizing the input received
@@ -597,7 +571,7 @@ async function createWithdrawalCall(
 }
 
 async function loginCall(
-  req: CredentialsRequestType,
+  req: { username: string; password: string },
   /**
    * FIXME: figure out if the two following
    * functions can be retrieved from the state.
@@ -629,7 +603,7 @@ async function loginCall(
  * the page's (to indicate a successful login or a problem).
  */
 async function registrationCall(
-  req: CredentialsRequestType,
+  req: { username: string; password: string },
   /**
    * FIXME: figure out if the two following
    * functions can be retrieved somewhat from
@@ -882,11 +856,7 @@ function ShowInputErrorLabel({
   isDirty: boolean;
 }): VNode {
   if (message && isDirty)
-    return (
-      <div class="informational informational-fail" style={{ marginTop: 8 }}>
-        {message}
-      </div>
-    );
+    return <div style={{ marginTop: 8, color: "red" }}>{message}</div>;
   return <Fragment />;
 }
 
@@ -1488,24 +1458,6 @@ function PaymentOptions({ currency }: { currency?: string }): VNode {
   );
 }
 
-function RegistrationButton(Props: any): VNode {
-  const { backendStateSetter, pageStateSetter } = Props;
-  const { i18n } = useTranslationContext();
-  if (bankUiSettings.allowRegistrations)
-    return (
-      <button
-        class="pure-button pure-button-secondary btn-cancel"
-        onClick={() => {
-          route("/register");
-        }}
-      >
-        {i18n.str`Register`}
-      </button>
-    );
-
-  return <span />;
-}
-
 function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
   return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
     ? obj
@@ -1514,21 +1466,21 @@ function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
 /**
  * Collect and submit login data.
  */
-function LoginForm(Props: any): VNode {
-  const { backendStateSetter, pageStateSetter } = Props;
-  const [submitData, submitDataSetter] = useCredentialsRequestType();
+function LoginForm(): VNode {
+  const [backendState, backendStateSetter] = useBackendState();
+  const { pageState, pageStateSetter } = usePageContext();
+  const [username, setUsername] = useState<string | undefined>();
+  const [password, setPassword] = useState<string | undefined>();
   const { i18n } = useTranslationContext();
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     ref.current?.focus();
   }, []);
 
-  const errors = !submitData
-    ? undefined
-    : undefinedIfEmpty({
-        username: !submitData.username ? i18n.str`Missing username` : undefined,
-        password: !submitData.password ? i18n.str`Missing password` : undefined,
-      });
+  const errors = undefinedIfEmpty({
+    username: !username ? i18n.str`Missing username` : undefined,
+    password: !password ? i18n.str`Missing password` : undefined,
+  });
 
   return (
     <div class="login-div">
@@ -1544,15 +1496,16 @@ function LoginForm(Props: any): VNode {
             type="text"
             name="username"
             id="username"
-            value={submitData && submitData.username}
+            value={username ?? ""}
             placeholder="Username"
             required
             onInput={(e): void => {
-              submitDataSetter((submitData: any) => ({
-                ...submitData,
-                username: e.currentTarget.value,
-              }));
+              setUsername(e.currentTarget.value);
             }}
+          />
+          <ShowInputErrorLabel
+            message={errors?.username}
+            isDirty={username !== undefined}
           />
           <p class="passFieldLabel loginFieldLabel formFieldLabel">
             <label for="password">{i18n.str`Password:`}</label>
@@ -1561,15 +1514,16 @@ function LoginForm(Props: any): VNode {
             type="password"
             name="password"
             id="password"
-            value={submitData && submitData.password}
+            value={password ?? ""}
             placeholder="Password"
             required
             onInput={(e): void => {
-              submitDataSetter((submitData: any) => ({
-                ...submitData,
-                password: e.currentTarget.value,
-              }));
+              setPassword(e.currentTarget.value);
             }}
+          />
+          <ShowInputErrorLabel
+            message={errors?.password}
+            isDirty={password !== undefined}
           />
           <br />
           <button
@@ -1577,34 +1531,31 @@ function LoginForm(Props: any): VNode {
             class="pure-button pure-button-primary"
             disabled={!!errors}
             onClick={() => {
-              if (typeof submitData === "undefined") {
-                console.log("login data is undefined", submitData);
-                return;
-              }
-              if (!submitData.password || !submitData.username) {
-                console.log(
-                  "username or password is the empty string",
-                  submitData,
-                );
-                return;
-              }
+              if (!username || !password) return;
               loginCall(
-                // Deep copy, to avoid the cleanup
-                // below make data disappear.
-                { ...submitData },
+                { username, password },
                 backendStateSetter,
                 pageStateSetter,
               );
-              submitDataSetter({
-                password: "",
-                repeatPassword: "",
-                username: "",
-              });
+              setUsername(undefined);
+              setPassword(undefined);
             }}
           >
             {i18n.str`Login`}
           </button>
-          {RegistrationButton(Props)}
+
+          {bankUiSettings.allowRegistrations ? (
+            <button
+              class="pure-button pure-button-secondary btn-cancel"
+              onClick={() => {
+                route("/register");
+              }}
+            >
+              {i18n.str`Register`}
+            </button>
+          ) : (
+            <div />
+          )}
         </div>
       </form>
     </div>
@@ -1615,24 +1566,23 @@ function LoginForm(Props: any): VNode {
  * Collect and submit registration data.
  */
 function RegistrationForm(): VNode {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-
   const [backendState, backendStateSetter] = useBackendState();
   const { pageState, pageStateSetter } = usePageContext();
-  const [submitData, submitDataSetter] = useCredentialsRequestType();
+  const [username, setUsername] = useState<string | undefined>();
+  const [password, setPassword] = useState<string | undefined>();
+  const [repeatPassword, setRepeatPassword] = useState<string | undefined>();
+
   const { i18n } = useTranslationContext();
 
-  const errors = !submitData
-    ? undefined
-    : undefinedIfEmpty({
-        username: !submitData.username ? i18n.str`Missing username` : undefined,
-        password: !submitData.password ? i18n.str`Missing password` : undefined,
-        repeatPassword: !submitData.repeatPassword
-          ? i18n.str`Missing password`
-          : submitData.repeatPassword !== submitData.password
-          ? i18n.str`Password don't match`
-          : undefined,
-      });
+  const errors = undefinedIfEmpty({
+    username: !username ? i18n.str`Missing username` : undefined,
+    password: !password ? i18n.str`Missing password` : undefined,
+    repeatPassword: !repeatPassword
+      ? i18n.str`Missing password`
+      : repeatPassword !== password
+      ? i18n.str`Password don't match`
+      : undefined,
+  });
 
   return (
     <Fragment>
@@ -1650,16 +1600,15 @@ function RegistrationForm(): VNode {
                 name="register-un"
                 type="text"
                 placeholder="Username"
-                value={submitData && submitData.username}
-                required
+                value={username ?? ""}
                 onInput={(e): void => {
-                  submitDataSetter((submitData: any) => ({
-                    ...submitData,
-                    username: e.currentTarget.value,
-                  }));
+                  setUsername(e.currentTarget.value);
                 }}
               />
-              <br />
+              <ShowInputErrorLabel
+                message={errors?.username}
+                isDirty={username !== undefined}
+              />
               <p class="unameFieldLabel registerFieldLabel formFieldLabel">
                 <label for="register-pw">{i18n.str`Password:`}</label>
               </p>
@@ -1668,14 +1617,15 @@ function RegistrationForm(): VNode {
                 name="register-pw"
                 id="register-pw"
                 placeholder="Password"
-                value={submitData && submitData.password}
+                value={password ?? ""}
                 required
                 onInput={(e): void => {
-                  submitDataSetter((submitData: any) => ({
-                    ...submitData,
-                    password: e.currentTarget.value,
-                  }));
+                  setPassword(e.currentTarget.value);
                 }}
+              />
+              <ShowInputErrorLabel
+                message={errors?.password}
+                isDirty={username !== undefined}
               />
               <p class="unameFieldLabel registerFieldLabel formFieldLabel">
                 <label for="register-repeat">{i18n.str`Repeat Password:`}</label>
@@ -1686,57 +1636,31 @@ function RegistrationForm(): VNode {
                 name="register-repeat"
                 id="register-repeat"
                 placeholder="Same password"
-                value={submitData && submitData.repeatPassword}
+                value={repeatPassword ?? ""}
                 required
                 onInput={(e): void => {
-                  submitDataSetter((submitData: any) => ({
-                    ...submitData,
-                    repeatPassword: e.currentTarget.value,
-                  }));
+                  setRepeatPassword(e.currentTarget.value);
                 }}
               />
+              <ShowInputErrorLabel
+                message={errors?.repeatPassword}
+                isDirty={username !== undefined}
+              />
               <br />
-              {/*
-              <label for="phone">{i18n.str`Phone number:`}</label>
-              // FIXME: add input validation (must start with +, otherwise only numbers)
-              <input
-                name="phone"
-                id="phone"
-                type="phone"
-                placeholder="+CC-123456789"
-                value={submitData && submitData.phone}
-                required
-                onInput={(e): void => {
-		  submitDataSetter((submitData: any) => ({
-                    ...submitData,
-                    phone: e.currentTarget.value,
-                  }))}} />
-              <br />
-              */}
               <button
                 class="pure-button pure-button-primary btn-register"
                 disabled={!!errors}
                 onClick={() => {
-                  console.log("maybe submitting the registration..");
-                  if (!submitData) return;
+                  if (!username || !password) return;
                   registrationCall(
-                    { ...submitData },
+                    { username, password },
                     backendStateSetter, // will store BE URL, if OK.
                     pageStateSetter,
                   );
-                  console.log("Clearing the input data");
-                  /**
-                   * FIXME: clearing the data should be done by setting
-                   * it to undefined, instead of the empty strings, just
-                   * like done in the login function.  Now set to the empty
-                   * strings due to a non lively update of the <input> fields
-                   * after setting to undefined.
-                   */
-                  submitDataSetter({
-                    username: "",
-                    password: "",
-                    repeatPassword: "",
-                  });
+
+                  setUsername(undefined);
+                  setPassword(undefined);
+                  setRepeatPassword(undefined);
                 }}
               >
                 {i18n.str`Register`}
@@ -1745,11 +1669,9 @@ function RegistrationForm(): VNode {
               <button
                 class="pure-button pure-button-secondary btn-cancel"
                 onClick={() => {
-                  submitDataSetter({
-                    username: "",
-                    password: "",
-                    repeatPassword: "",
-                  });
+                  setUsername(undefined);
+                  setPassword(undefined);
+                  setRepeatPassword(undefined);
                   route("/account");
                 }}
               >
