@@ -18,9 +18,10 @@ import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { BackendStateType, useBackendState } from "../../hooks/backend.js";
+import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders, undefinedIfEmpty } from "../../utils.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
 
@@ -31,7 +32,7 @@ export function PaytoWireTransferForm({
   focus?: boolean;
   currency?: string;
 }): VNode {
-  const [backendState, backendStateSetter] = useBackendState();
+  const backend = useBackendContext();
   const { pageState, pageStateSetter } = usePageContext(); // NOTE: used for go-back button?
 
   const [submitData, submitDataSetter] = useWireTransferRequestType();
@@ -81,7 +82,7 @@ export function PaytoWireTransferForm({
               required
               pattern={ibanRegex}
               onInput={(e): void => {
-                submitDataSetter((submitData: any) => ({
+                submitDataSetter((submitData) => ({
                   ...submitData,
                   iban: e.currentTarget.value,
                 }));
@@ -102,7 +103,7 @@ export function PaytoWireTransferForm({
               value={submitData?.subject ?? ""}
               required
               onInput={(e): void => {
-                submitDataSetter((submitData: any) => ({
+                submitDataSetter((submitData) => ({
                   ...submitData,
                   subject: e.currentTarget.value,
                 }));
@@ -133,7 +134,7 @@ export function PaytoWireTransferForm({
               required
               value={submitData?.amount ?? ""}
               onInput={(e): void => {
-                submitDataSetter((submitData: any) => ({
+                submitDataSetter((submitData) => ({
                   ...submitData,
                   amount: e.currentTarget.value,
                 }));
@@ -179,7 +180,7 @@ export function PaytoWireTransferForm({
                 };
                 return await createTransactionCall(
                   transactionData,
-                  backendState,
+                  backend.state,
                   pageStateSetter,
                   () =>
                     submitDataSetter((p) => ({
@@ -209,7 +210,7 @@ export function PaytoWireTransferForm({
             href="/account"
             onClick={() => {
               console.log("switch to raw payto form");
-              pageStateSetter((prevState: any) => ({
+              pageStateSetter((prevState) => ({
                 ...prevState,
                 isRawPayto: true,
               }));
@@ -283,7 +284,7 @@ export function PaytoWireTransferForm({
 
               return await createTransactionCall(
                 transactionData,
-                backendState,
+                backend.state,
                 pageStateSetter,
                 () => rawPaytoInputSetter(undefined),
               );
@@ -295,7 +296,7 @@ export function PaytoWireTransferForm({
             href="/account"
             onClick={() => {
               console.log("switch to wire-transfer-form");
-              pageStateSetter((prevState: any) => ({
+              pageStateSetter((prevState) => ({
                 ...prevState,
                 isRawPayto: false,
               }));
@@ -345,7 +346,7 @@ function useWireTransferRequestType(
  */
 async function createTransactionCall(
   req: TransactionRequestType,
-  backendState: BackendStateType | undefined,
+  backendState: BackendState,
   pageStateSetter: StateUpdater<PageStateType>,
   /**
    * Optional since the raw payto form doesn't have
@@ -353,13 +354,30 @@ async function createTransactionCall(
    */
   cleanUpForm: () => void,
 ): Promise<void> {
-  let res: any;
+  if (backendState.status === "loggedOut") {
+    console.log("No credentials found.");
+    pageStateSetter((prevState) => ({
+      ...prevState,
+
+      error: {
+        title: "No credentials found.",
+      },
+    }));
+    return;
+  }
+  let res: Response;
   try {
-    res = await postToBackend(
-      `access-api/accounts/${getUsername(backendState)}/transactions`,
-      backendState,
-      JSON.stringify(req),
+    const { username, password } = backendState;
+    const headers = prepareHeaders(username, password);
+    const url = new URL(
+      `access-api/accounts/${backendState.username}/transactions`,
+      backendState.url,
     );
+    res = await fetch(url.href, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(req),
+    });
   } catch (error) {
     console.log("Could not POST transaction request to the bank", error);
     pageStateSetter((prevState) => ({
@@ -401,42 +419,4 @@ async function createTransactionCall(
   // Only at this point the input data can
   // be discarded.
   cleanUpForm();
-}
-
-/**
- * Get username from the backend state, and throw
- * exception if not found.
- */
-function getUsername(backendState: BackendStateType | undefined): string {
-  if (typeof backendState === "undefined")
-    throw Error("Username can't be found in a undefined backend state.");
-
-  if (!backendState.username) {
-    throw Error("No username, must login first.");
-  }
-  return backendState.username;
-}
-
-/**
- * Helps extracting the credentials from the state
- * and wraps the actual call to 'fetch'.  Should be
- * enclosed in a try-catch block by the caller.
- */
-async function postToBackend(
-  uri: string,
-  backendState: BackendStateType | undefined,
-  body: string,
-): Promise<any> {
-  if (typeof backendState === "undefined")
-    throw Error("Credentials can't be found in a undefined backend state.");
-
-  const { username, password } = backendState;
-  const headers = prepareHeaders(username, password);
-  // Backend URL must have been stored _with_ a final slash.
-  const url = new URL(uri, backendState.url);
-  return await fetch(url.href, {
-    method: "POST",
-    headers,
-    body,
-  });
 }

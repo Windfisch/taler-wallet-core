@@ -1,5 +1,6 @@
 import { Fragment, h, VNode } from "preact";
 import useSWR from "swr";
+import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { QrCodeSection } from "./QrCodeSection.js";
@@ -10,10 +11,15 @@ import { TalerWithdrawalConfirmationQuestion } from "./TalerWithdrawalConfirmati
  * permit the passing of exchange and reserve details to
  * the bank.  Poll the backend until such operation is done.
  */
-export function TalerWithdrawalQRCode(Props: any): VNode {
+export function TalerWithdrawalQRCode({
+  withdrawalId,
+  talerWithdrawUri,
+}: {
+  withdrawalId: string;
+  talerWithdrawUri: string;
+}): VNode {
   // turns true when the wallet POSTed the reserve details:
   const { pageState, pageStateSetter } = usePageContext();
-  const { withdrawalId, talerWithdrawUri, backendState } = Props;
   const { i18n } = useTranslationContext();
   const abortButton = (
     <a
@@ -93,5 +99,5 @@ export function TalerWithdrawalQRCode(Props: any): VNode {
    * Wallet POSTed the withdrawal details!  Ask the
    * user to authorize the operation (here CAPTCHA).
    */
-  return <TalerWithdrawalConfirmationQuestion backendState={backendState} />;
+  return <TalerWithdrawalConfirmationQuestion />;
 }

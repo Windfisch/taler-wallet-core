@@ -16,10 +16,10 @@
 
 import { h, VNode } from "preact";
 import { route } from "preact-router";
-import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
-import { PageStateType, usePageContext } from "../../context/pageState.js";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { BackendStateType, useBackendState } from "../../hooks/backend.js";
+import { BackendStateHandler } from "../../hooks/backend.js";
 import { bankUiSettings } from "../../settings.js";
 import { getBankBackendBaseUrl, undefinedIfEmpty } from "../../utils.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
@@ -28,8 +28,7 @@ import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
  * Collect and submit login data.
  */
 export function LoginForm(): VNode {
-  const [backendState, backendStateSetter] = useBackendState();
-  const { pageState, pageStateSetter } = usePageContext();
+  const backend = useBackendContext();
   const [username, setUsername] = useState<string | undefined>();
   const [password, setPassword] = useState<string | undefined>();
   const { i18n } = useTranslationContext();
@@ -93,11 +92,7 @@ export function LoginForm(): VNode {
             disabled={!!errors}
             onClick={() => {
               if (!username || !password) return;
-              loginCall(
-                { username, password },
-                backendStateSetter,
-                pageStateSetter,
-              );
+              loginCall({ username, password }, backend);
               setUsername(undefined);
               setPassword(undefined);
             }}
@@ -129,21 +124,16 @@ async function loginCall(
    * FIXME: figure out if the two following
    * functions can be retrieved from the state.
    */
-  backendStateSetter: StateUpdater<BackendStateType | undefined>,
-  pageStateSetter: StateUpdater<PageStateType>,
+  backend: BackendStateHandler,
 ): Promise<void> {
   /**
    * Optimistically setting the state as 'logged in', and
    * let the Account component request the balance to check
    * whether the credentials are valid.  */
-  pageStateSetter((prevState) => ({ ...prevState, isLoggedIn: true }));
-  let baseUrl = getBankBackendBaseUrl();
-  if (!baseUrl.endsWith("/")) baseUrl += "/";
 
-  backendStateSetter((prevState) => ({
-    ...prevState,
-    url: baseUrl,
+  backend.save({
+    url: getBankBackendBaseUrl(),
     username: req.username,
     password: req.password,
-  }));
+  });
 }

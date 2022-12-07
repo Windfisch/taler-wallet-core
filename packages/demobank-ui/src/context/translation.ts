@@ -20,7 +20,7 @@
  */
 
 import { i18n, setupI18n } from "@gnu-taler/taler-util";
-import { createContext, h, VNode } from "preact";
+import { ComponentChildren, createContext, h, VNode } from "preact";
 import { useContext, useEffect } from "preact/hooks";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { strings } from "../i18n/strings.js";
@@ -60,7 +60,7 @@ const Context = createContext<Type>(initial);
 
 interface Props {
   initial?: string;
-  children: any;
+  children: ComponentChildren;
   forceLang?: string;
 }
 

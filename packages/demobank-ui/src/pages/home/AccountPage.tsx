@@ -16,14 +16,15 @@
 
 import { Amounts, HttpStatusCode } from "@gnu-taler/taler-util";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
-import { h, Fragment, VNode } from "preact";
-import { StateUpdater, useEffect, useState } from "preact/hooks";
+import { ComponentChildren, Fragment, h, VNode } from "preact";
+import { StateUpdater, useEffect } from "preact/hooks";
 import useSWR, { SWRConfig, useSWRConfig } from "swr";
+import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { useBackendState } from "../../hooks/backend.js";
+import { BackendInfo } from "../../hooks/backend.js";
 import { bankUiSettings } from "../../settings.js";
-import { getIbanFromPayto } from "../../utils.js";
+import { getIbanFromPayto, prepareHeaders } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { LoginForm } from "./LoginForm.js";
 import { PaymentOptions } from "./PaymentOptions.js";
@@ -31,11 +32,10 @@ import { TalerWithdrawalQRCode } from "./TalerWithdrawalQRCode.js";
 import { Transactions } from "./Transactions.js";
 
 export function AccountPage(): VNode {
-  const [backendState, backendStateSetter] = useBackendState();
+  const backend = useBackendContext();
   const { i18n } = useTranslationContext();
-  const { pageState, pageStateSetter } = usePageContext();
 
-  if (!pageState.isLoggedIn) {
+  if (backend.state.status === "loggedOut") {
     return (
       <BankFrame>
         <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
@@ -44,28 +44,9 @@ export function AccountPage(): VNode {
     );
   }
 
-  if (typeof backendState === "undefined") {
-    pageStateSetter((prevState) => ({
-      ...prevState,
-
-      isLoggedIn: false,
-      error: {
-        title: i18n.str`Page has a problem: logged in but backend state is lost.`,
-      },
-    }));
-    return <p>Error: waiting for details...</p>;
-  }
-  console.log("Showing the profile page..");
   return (
-    <SWRWithCredentials
-      username={backendState.username}
-      password={backendState.password}
-      backendUrl={backendState.url}
-    >
-      <Account
-        accountLabel={backendState.username}
-        backendState={backendState}
-      />
+    <SWRWithCredentials info={backend.state}>
+      <Account accountLabel={backend.state.username} />
     </SWRWithCredentials>
   );
 }
@@ -73,16 +54,20 @@ export function AccountPage(): VNode {
 /**
  * Factor out login credentials.
  */
-function SWRWithCredentials(props: any): VNode {
-  const { username, password, backendUrl } = props;
-  const headers = new Headers();
-  headers.append("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
-  console.log("Likely backend base URL", backendUrl);
+function SWRWithCredentials({
+  children,
+  info,
+}: {
+  children: ComponentChildren;
+  info: BackendInfo;
+}): VNode {
+  const { username, password, url: backendUrl } = info;
+  const headers = prepareHeaders(username, password);
   return (
     <SWRConfig
       value={{
         fetcher: (url: string) => {
-          return fetch(backendUrl + url || "", { headers }).then((r) => {
+          return fetch(new URL(url, backendUrl).href, { headers }).then((r) => {
             if (!r.ok) throw { status: r.status, json: r.json() };
 
             return r.json();
@@ -90,7 +75,7 @@ function SWRWithCredentials(props: any): VNode {
         },
       }}
     >
-      {props.children}
+      {children as any}
     </SWRConfig>
   );
 }
@@ -100,9 +85,9 @@ function SWRWithCredentials(props: any): VNode {
  * is mostly needed to provide the user's credentials to POST
  * to the bank.
  */
-function Account(Props: any): VNode {
+function Account({ accountLabel }: { accountLabel: string }): VNode {
   const { cache } = useSWRConfig();
-  const { accountLabel, backendState } = Props;
+
   // Getting the bank account balance:
   const endpoint = `access-api/accounts/${accountLabel}`;
   const { data, error, mutate } = useSWR(endpoint, {
@@ -112,14 +97,9 @@ function Account(Props: any): VNode {
     // revalidateOnFocus: false,
     // revalidateOnReconnect: false,
   });
+  const backend = useBackendContext();
   const { pageState, pageStateSetter: setPageState } = usePageContext();
-  const {
-    withdrawalInProgress,
-    withdrawalId,
-    isLoggedIn,
-    talerWithdrawUri,
-    timestamp,
-  } = pageState;
+  const { withdrawalId, talerWithdrawUri, timestamp } = pageState;
   const { i18n } = useTranslationContext();
   useEffect(() => {
     mutate();
@@ -129,10 +109,11 @@ function Account(Props: any): VNode {
    * This part shows a list of transactions: with 5 elements by
    * default and offers a "load more" button.
    */
-  const [txPageNumber, setTxPageNumber] = useTransactionPageNumber();
-  const txsPages = [];
-  for (let i = 0; i <= txPageNumber; i++)
-    txsPages.push(<Transactions accountLabel={accountLabel} pageNumber={i} />);
+  // const [txPageNumber, setTxPageNumber] = useTransactionPageNumber();
+  // const txsPages = [];
+  // for (let i = 0; i <= txPageNumber; i++) {
+  //   txsPages.push(<Transactions accountLabel={accountLabel} pageNumber={i} />);
+  // }
 
   if (typeof error !== "undefined") {
     console.log("account error", error, endpoint);
@@ -143,10 +124,10 @@ function Account(Props: any): VNode {
      */
     switch (error.status) {
       case 404: {
+        backend.clear();
         setPageState((prevState: PageStateType) => ({
           ...prevState,
 
-          isLoggedIn: false,
           error: {
             title: i18n.str`Username or account label '${accountLabel}' not found.  Won't login.`,
           },
@@ -170,10 +151,9 @@ function Account(Props: any): VNode {
       }
       case HttpStatusCode.Unauthorized:
       case HttpStatusCode.Forbidden: {
+        backend.clear();
         setPageState((prevState: PageStateType) => ({
           ...prevState,
-
-          isLoggedIn: false,
           error: {
             title: i18n.str`Wrong credentials given.`,
           },
@@ -181,10 +161,9 @@ function Account(Props: any): VNode {
         return <p>Wrong credentials...</p>;
       }
       default: {
+        backend.clear();
         setPageState((prevState: PageStateType) => ({
           ...prevState,
-
-          isLoggedIn: false,
           error: {
             title: i18n.str`Account information could not be retrieved.`,
             debug: JSON.stringify(error),
@@ -211,13 +190,11 @@ function Account(Props: any): VNode {
    * the outcome.
    */
   console.log(`maybe new withdrawal ${talerWithdrawUri}`);
-  if (talerWithdrawUri) {
+  if (talerWithdrawUri && withdrawalId) {
     console.log("Bank created a new Taler withdrawal");
     return (
       <BankFrame>
         <TalerWithdrawalQRCode
-          accountLabel={accountLabel}
-          backendState={backendState}
           withdrawalId={withdrawalId}
           talerWithdrawUri={talerWithdrawUri}
         />
@@ -266,7 +243,7 @@ function Account(Props: any): VNode {
           <h2>{i18n.str`Latest transactions:`}</h2>
           <Transactions
             balanceValue={balanceValue}
-            pageNumber="0"
+            pageNumber={0}
             accountLabel={accountLabel}
           />
         </article>

@@ -16,9 +16,10 @@
 
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { BackendStateType, useBackendState } from "../../hooks/backend.js";
+import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders, validateAmount } from "../../utils.js";
 
 export function WalletWithdrawForm({
@@ -28,10 +29,10 @@ export function WalletWithdrawForm({
   currency?: string;
   focus?: boolean;
 }): VNode {
-  const [backendState, backendStateSetter] = useBackendState();
+  const backend = useBackendContext();
   const { pageState, pageStateSetter } = usePageContext();
   const { i18n } = useTranslationContext();
-  let submitAmount = "5.00";
+  let submitAmount: string | undefined = "5.00";
 
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -83,7 +84,7 @@ export function WalletWithdrawForm({
               if (!submitAmount && currency) return;
               createWithdrawalCall(
                 `${currency}:${submitAmount}`,
-                backendState,
+                backend.state,
                 pageStateSetter,
               );
             }}
@@ -105,10 +106,10 @@ export function WalletWithdrawForm({
  * the user about the operation's outcome.  (2) use POST helper.  */
 async function createWithdrawalCall(
   amount: string,
-  backendState: BackendStateType | undefined,
+  backendState: BackendState,
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
-  if (typeof backendState === "undefined") {
+  if (backendState?.status === "loggedOut") {
     console.log("Page has a problem: no credentials found in the state.");
     pageStateSetter((prevState) => ({
       ...prevState,
@@ -120,7 +121,7 @@ async function createWithdrawalCall(
     return;
   }
 
-  let res: any;
+  let res: Response;
   try {
     const { username, password } = backendState;
     const headers = prepareHeaders(username, password);

@@ -16,9 +16,10 @@
 import { Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
 import { StateUpdater, useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { BackendStateType, useBackendState } from "../../hooks/backend.js";
+import { BackendStateHandler } from "../../hooks/backend.js";
 import { bankUiSettings } from "../../settings.js";
 import { getBankBackendBaseUrl, undefinedIfEmpty } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
@@ -44,7 +45,7 @@ export function RegistrationPage(): VNode {
  * Collect and submit registration data.
  */
 function RegistrationForm(): VNode {
-  const [backendState, backendStateSetter] = useBackendState();
+  const backend = useBackendContext();
   const { pageState, pageStateSetter } = usePageContext();
   const [username, setUsername] = useState<string | undefined>();
   const [password, setPassword] = useState<string | undefined>();
@@ -132,7 +133,7 @@ function RegistrationForm(): VNode {
                   if (!username || !password) return;
                   registrationCall(
                     { username, password },
-                    backendStateSetter, // will store BE URL, if OK.
+                    backend, // will store BE URL, if OK.
                     pageStateSetter,
                   );
 
@@ -177,23 +178,17 @@ async function registrationCall(
    * functions can be retrieved somewhat from
    * the state.
    */
-  backendStateSetter: StateUpdater<BackendStateType | undefined>,
+  backend: BackendStateHandler,
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
-  let baseUrl = getBankBackendBaseUrl();
-  /**
-   * If the base URL doesn't end with slash and the path
-   * is not empty, then the concatenation made by URL()
-   * drops the last path element.
-   */
-  if (!baseUrl.endsWith("/")) baseUrl += "/";
+  const url = getBankBackendBaseUrl();
 
   const headers = new Headers();
   headers.append("Content-Type", "application/json");
-  const url = new URL("access-api/testing/register", baseUrl);
+  const registerEndpoint = new URL("access-api/testing/register", url);
   let res: Response;
   try {
-    res = await fetch(url.href, {
+    res = await fetch(registerEndpoint.href, {
       method: "POST",
       body: JSON.stringify({
         username: req.username,
@@ -203,7 +198,7 @@ async function registrationCall(
     });
   } catch (error) {
     console.log(
-      `Could not POST new registration to the bank (${url.href})`,
+      `Could not POST new registration to the bank (${registerEndpoint.href})`,
       error,
     );
     pageStateSetter((prevState) => ({
@@ -239,16 +234,11 @@ async function registrationCall(
     }
   } else {
     // registration was ok
-    pageStateSetter((prevState) => ({
-      ...prevState,
-      isLoggedIn: true,
-    }));
-    backendStateSetter((prevState) => ({
-      ...prevState,
-      url: baseUrl,
+    backend.save({
+      url,
       username: req.username,
       password: req.password,
-    }));
+    });
     route("/account");
   }
 }

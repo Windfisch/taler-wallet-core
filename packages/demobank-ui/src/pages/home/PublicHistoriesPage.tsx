@@ -15,7 +15,7 @@
  */
 
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
-import { Fragment, h, VNode } from "preact";
+import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
 import { StateUpdater } from "preact/hooks";
 import useSWR, { SWRConfig } from "swr";
@@ -35,8 +35,13 @@ export function PublicHistoriesPage(): VNode {
   );
 }
 
-function SWRWithoutCredentials(Props: any): VNode {
-  const { baseUrl } = Props;
+function SWRWithoutCredentials({
+  baseUrl,
+  children,
+}: {
+  children: ComponentChildren;
+  baseUrl: string;
+}): VNode {
   console.log("Base URL", baseUrl);
   return (
     <SWRConfig
@@ -49,7 +54,7 @@ function SWRWithoutCredentials(Props: any): VNode {
           }),
       }}
     >
-      {Props.children}
+      {children as any}
     </SWRConfig>
   );
 }
@@ -93,7 +98,7 @@ function PublicHistories(): VNode {
     }
   }
   if (!data) return <p>Waiting public accounts list...</p>;
-  const txs: any = {};
+  const txs: Record<string, h.JSX.Element> = {};
   const accountsBar = [];
 
   /**

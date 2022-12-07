@@ -29,7 +29,6 @@ export type Type = {
 };
 const initial: Type = {
   pageState: {
-    isLoggedIn: false,
     isRawPayto: false,
     withdrawalInProgress: false,
   },
@@ -59,7 +58,6 @@ export const PageStateProvider = ({
  */
 function usePageState(
   state: PageStateType = {
-    isLoggedIn: false,
     isRawPayto: false,
     withdrawalInProgress: false,
   },
@@ -98,7 +96,6 @@ function usePageState(
  * Track page state.
  */
 export interface PageStateType {
-  isLoggedIn: boolean;
   isRawPayto: boolean;
   withdrawalInProgress: boolean;
   error?: {

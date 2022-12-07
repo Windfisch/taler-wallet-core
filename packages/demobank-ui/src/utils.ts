@@ -1,9 +1,11 @@
+import { canonicalizeBaseUrl } from "@gnu-taler/taler-util";
+
 /**
  * Validate (the number part of) an amount.  If needed,
  * replace comma with a dot.  Returns 'false' whenever
  * the input is invalid, the valid amount otherwise.
  */
-export function validateAmount(maybeAmount: string): any {
+export function validateAmount(maybeAmount: string | undefined): string | undefined {
   const amountRegex = "^[0-9]+(.[0-9]+)?$";
   if (!maybeAmount) {
     console.log(`Entered amount (${maybeAmount}) mismatched <input> pattern.`);
@@ -15,7 +17,7 @@ export function validateAmount(maybeAmount: string): any {
     const re = RegExp(amountRegex);
     if (!re.test(maybeAmount)) {
       console.log(`Not using invalid amount '${maybeAmount}'.`);
-      return false;
+      return;
     }
   }
   return maybeAmount;
@@ -33,18 +35,19 @@ export function getIbanFromPayto(url: string): string {
   return iban;
 }
 
+const maybeRootPath = "https://bank.demo.taler.net/demobanks/default/";
+
 export function getBankBackendBaseUrl(): string {
   const overrideUrl = localStorage.getItem("bank-base-url");
   if (overrideUrl) {
     console.log(
       `using bank base URL ${overrideUrl} (override via bank-base-url localStorage)`,
     );
-    return overrideUrl;
+  } else {
+    console.log(`using bank base URL (${maybeRootPath})`);
   }
-  const maybeRootPath = "https://bank.demo.taler.net/demobanks/default/";
-  if (!maybeRootPath.endsWith("/")) return `${maybeRootPath}/`;
-  console.log(`using bank base URL (${maybeRootPath})`);
-  return maybeRootPath;
+  return canonicalizeBaseUrl(overrideUrl ? overrideUrl : maybeRootPath)
+
 }
 
 export function undefinedIfEmpty<T extends object>(obj: T): T | undefined {

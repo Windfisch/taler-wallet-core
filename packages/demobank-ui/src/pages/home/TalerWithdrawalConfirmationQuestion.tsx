@@ -1,17 +1,18 @@
 import { Fragment, h, VNode } from "preact";
 import { StateUpdater } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { BackendStateType } from "../../hooks/backend.js";
+import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders } from "../../utils.js";
 
 /**
  * Additional authentication required to complete the operation.
  * Not providing a back button, only abort.
  */
-export function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
+export function TalerWithdrawalConfirmationQuestion(): VNode {
   const { pageState, pageStateSetter } = usePageContext();
-  const { backendState } = Props;
+  const backend = useBackendContext();
   const { i18n } = useTranslationContext();
   const captchaNumbers = {
     a: Math.floor(Math.random() * 10),
@@ -57,7 +58,7 @@ export function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                       (captchaNumbers.a + captchaNumbers.b).toString()
                     ) {
                       confirmWithdrawalCall(
-                        backendState,
+                        backend.state,
                         pageState.withdrawalId,
                         pageStateSetter,
                       );
@@ -79,7 +80,7 @@ export function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                   class="pure-button pure-button-secondary btn-cancel"
                   onClick={async () =>
                     await abortWithdrawalCall(
-                      backendState,
+                      backend.state,
                       pageState.withdrawalId,
                       pageStateSetter,
                     )
@@ -116,11 +117,11 @@ export function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
  * 'page state' and let the related components refresh.
  */
 async function confirmWithdrawalCall(
-  backendState: BackendStateType | undefined,
+  backendState: BackendState,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
-  if (typeof backendState === "undefined") {
+  if (backendState.status === "loggedOut") {
     console.log("No credentials found.");
     pageStateSetter((prevState) => ({
       ...prevState,
@@ -211,11 +212,11 @@ async function confirmWithdrawalCall(
  * Abort a withdrawal operation via the Access API's /abort.
  */
 async function abortWithdrawalCall(
-  backendState: BackendStateType | undefined,
+  backendState: BackendState,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
-  if (typeof backendState === "undefined") {
+  if (backendState.status === "loggedOut") {
     console.log("No credentials found.");
     pageStateSetter((prevState) => ({
       ...prevState,
@@ -237,7 +238,7 @@ async function abortWithdrawalCall(
     }));
     return;
   }
-  let res: any;
+  let res: Response;
   try {
     const { username, password } = backendState;
     const headers = prepareHeaders(username, password);

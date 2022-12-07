@@ -14,15 +14,21 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Fragment, h, VNode } from "preact";
+import { ComponentChildren, Fragment, h, VNode } from "preact";
 import talerLogo from "../../assets/logo-white.svg";
 import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
+import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { bankUiSettings } from "../../settings.js";
 
-export function BankFrame(Props: any): VNode {
+export function BankFrame({
+  children,
+}: {
+  children: ComponentChildren;
+}): VNode {
   const { i18n } = useTranslationContext();
+  const backend = useBackendContext();
   const { pageState, pageStateSetter } = usePageContext();
   console.log("BankFrame state", pageState);
   const logOut = (
@@ -33,9 +39,9 @@ export function BankFrame(Props: any): VNode {
         onClick={() => {
           pageStateSetter((prevState: PageStateType) => {
             const { talerWithdrawUri, withdrawalId, ...rest } = prevState;
+            backend.clear();
             return {
               ...rest,
-              isLoggedIn: false,
               withdrawalInProgress: false,
               error: undefined,
               info: undefined,
@@ -98,10 +104,10 @@ export function BankFrame(Props: any): VNode {
         </nav>
       </div>
       <section id="main" class="content">
-        <ErrorBanner pageState={[pageState, pageStateSetter]} />
-        <StatusBanner pageState={[pageState, pageStateSetter]} />
-        {pageState.isLoggedIn ? logOut : null}
-        {Props.children}
+        <ErrorBanner />
+        <StatusBanner />
+        {backend.state.status === "loggedIn" ? logOut : null}
+        {children}
       </section>
       <section id="footer" class="footer">
         <div class="footer">
@@ -127,9 +133,9 @@ function maybeDemoContent(content: VNode): VNode {
   return <Fragment />;
 }
 
-function ErrorBanner(Props: any): VNode | null {
-  const [pageState, pageStateSetter] = Props.pageState;
-  // const { i18n } = useTranslationContext();
+function ErrorBanner(): VNode | null {
+  const { pageState, pageStateSetter } = usePageContext();
+
   if (!pageState.error) return null;
 
   const rval = (
@@ -144,7 +150,7 @@ function ErrorBanner(Props: any): VNode | null {
             class="pure-button"
             value="Clear"
             onClick={async () => {
-              pageStateSetter((prev: any) => ({ ...prev, error: undefined }));
+              pageStateSetter((prev) => ({ ...prev, error: undefined }));
             }}
           />
         </div>
@@ -156,8 +162,8 @@ function ErrorBanner(Props: any): VNode | null {
   return rval;
 }
 
-function StatusBanner(Props: any): VNode | null {
-  const [pageState, pageStateSetter] = Props.pageState;
+function StatusBanner(): VNode | null {
+  const { pageState, pageStateSetter } = usePageContext();
   if (!pageState.info) return null;
 
   const rval = (
@@ -172,7 +178,7 @@ function StatusBanner(Props: any): VNode | null {
             class="pure-button"
             value="Clear"
             onClick={async () => {
-              pageStateSetter((prev: any) => ({ ...prev, info: undefined }));
+              pageStateSetter((prev) => ({ ...prev, info: undefined }));
             }}
           />
         </div>

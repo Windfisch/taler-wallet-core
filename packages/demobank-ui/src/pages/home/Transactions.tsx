@@ -10,14 +10,20 @@ export function Transactions({
   pageNumber,
   accountLabel,
   balanceValue,
-}: any): VNode {
+}: {
+  pageNumber: number;
+  accountLabel: string;
+  balanceValue?: string;
+}): VNode {
   const { i18n } = useTranslationContext();
   const { data, error, mutate } = useSWR(
     `access-api/accounts/${accountLabel}/transactions?page=${pageNumber}`,
   );
   useEffect(() => {
-    mutate();
-  }, [balanceValue]);
+    if (balanceValue) {
+      mutate();
+    }
+  }, [balanceValue ?? ""]);
   if (typeof error !== "undefined") {
     console.log("transactions not found error", error);
     switch (error.status) {

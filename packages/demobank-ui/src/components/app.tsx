@@ -1,4 +1,5 @@
 import { h, FunctionalComponent } from "preact";
+import { BackendStateProvider } from "../context/backend.js";
 import { PageStateProvider } from "../context/pageState.js";
 import { TranslationProvider } from "../context/translation.js";
 import { Routing } from "../pages/Routing.js";
@@ -24,7 +25,9 @@ const App: FunctionalComponent = () => {
   return (
     <TranslationProvider>
       <PageStateProvider>
-        <Routing />
+        <BackendStateProvider>
+          <Routing />
+        </BackendStateProvider>
       </PageStateProvider>
     </TranslationProvider>
   );
