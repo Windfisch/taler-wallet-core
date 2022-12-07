@@ -68,6 +68,7 @@ import { runEnv1 } from "./env1.js";
 import { GlobalTestState, runTestWithState } from "./harness/harness.js";
 import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
 import { lintExchangeDeployment } from "./lint.js";
+import { runEnvFull } from "./env-full.js";
 // @ts-ignore
 global.TextEncoder = TextEncoder;
 // @ts-ignore
@@ -907,6 +908,18 @@ advancedCli
       console.log("Could not parse config JSON");
     }
     await runBench3(config);
+  });
+
+advancedCli
+  .subcommand("envFull", "env-full", {
+    help: "Run a test environment for bench1",
+  })
+  .action(async (args) => {
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "taler-env-full-"));
+    const testState = new GlobalTestState({
+      testDir,
+    });
+    await runTestWithState(testState, runEnvFull, "env-full", true);
   });
 
 advancedCli

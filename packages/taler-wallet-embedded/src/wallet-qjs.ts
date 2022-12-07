@@ -422,5 +422,23 @@ export async function testWithGv() {
   });
 }
 
+export async function testWithLocal() {
+  const w = await getWallet();
+  await w.wallet.client.call(WalletApiOperation.InitWallet, {});
+  await w.wallet.client.call(WalletApiOperation.RunIntegrationTest, {
+    amountToSpend: "TESTKUDOS:1",
+    amountToWithdraw: "TESTKUDOS:3",
+    bankBaseUrl: "http://localhost:8082/",
+    bankAccessApiBaseUrl: "http://localhost:8082/taler-bank-access/",
+    exchangeBaseUrl: "http://localhost:8081/",
+    merchantBaseUrl: "http://backend.demo.taler.net:8083/",
+  });
+  await w.wallet.runTaskLoop({
+    stopWhenDone: true,
+  });
+}
+
 // @ts-ignore
 globalThis.testWithGv = testWithGv;
+// @ts-ignore
+globalThis.testWithLocal = testWithLocal;
