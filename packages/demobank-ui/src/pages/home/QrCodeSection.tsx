@@ -31,7 +31,9 @@ export function QrCodeSection({
     //Taler Wallet WebExtension is listening to headers response and tab updates.
     //In the SPA there is no header response with the Taler URI so
     //this hack manually triggers the tab update after the QR is in the DOM.
-    window.location.hash = `/account/${new Date().getTime()}`;
+    // WebExtension will be using
+    // https://developer.chrome.com/docs/extensions/reference/tabs/#event-onUpdated
+    document.title = `${document.title} ${talerWithdrawUri}`;
   }, []);
 
   return (

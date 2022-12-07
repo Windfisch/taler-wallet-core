@@ -28,7 +28,7 @@ export function Routing(): VNode {
     <Router history={history}>
       <Route path="/public-accounts" component={PublicHistoriesPage} />
       <Route path="/register" component={RegistrationPage} />
-      <Route path="/account/:id*" component={AccountPage} />
+      <Route path="/account" component={AccountPage} />
       <Route default component={Redirect} to="/account" />
     </Router>
   );
