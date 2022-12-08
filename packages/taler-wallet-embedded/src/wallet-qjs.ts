@@ -431,11 +431,12 @@ export async function testWithLocal() {
     bankBaseUrl: "http://localhost:8082/",
     bankAccessApiBaseUrl: "http://localhost:8082/taler-bank-access/",
     exchangeBaseUrl: "http://localhost:8081/",
-    merchantBaseUrl: "http://backend.demo.taler.net:8083/",
+    merchantBaseUrl: "http://localhost:8083/",
   });
   await w.wallet.runTaskLoop({
     stopWhenDone: true,
   });
+  w.wallet.stop();
 }
 
 // @ts-ignore

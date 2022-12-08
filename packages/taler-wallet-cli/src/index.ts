@@ -48,6 +48,7 @@ import {
 import {
   CryptoDispatcher,
   getDefaultNodeWallet,
+  getDefaultNodeWallet2,
   getErrorDetailFromException,
   nativeCrypto,
   NodeHttpLib,
@@ -863,6 +864,34 @@ advancedCli
       );
       console.log(JSON.stringify(pending, undefined, 2));
     });
+  });
+
+advancedCli
+  .subcommand("benchInternal", "bench-internal", {
+    help: "Run the 'bench-internal' benchmark",
+  })
+  .action(async (args) => {
+    const myHttpLib = new NodeHttpLib();
+    myHttpLib.setThrottling(false);
+    const res = await getDefaultNodeWallet2({
+      // No persistent DB storage.
+      persistentStoragePath: undefined,
+      httpLib: myHttpLib,
+    });
+    const wallet = res.wallet;
+    await wallet.client.call(WalletApiOperation.InitWallet, {});
+    await wallet.client.call(WalletApiOperation.RunIntegrationTest, {
+      amountToSpend: "TESTKUDOS:1",
+      amountToWithdraw: "TESTKUDOS:3",
+      bankBaseUrl: "http://localhost:8082/",
+      bankAccessApiBaseUrl: "http://localhost:8082/taler-bank-access/",
+      exchangeBaseUrl: "http://localhost:8081/",
+      merchantBaseUrl: "http://localhost:8083/",
+    });
+    await wallet.runTaskLoop({
+      stopWhenDone: true,
+    });
+    wallet.stop();
   });
 
 advancedCli
