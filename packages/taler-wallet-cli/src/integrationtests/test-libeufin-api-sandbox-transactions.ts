@@ -32,12 +32,12 @@ export async function runLibeufinApiSandboxTransactionsTest(
   });
   await sandbox.start();
   await sandbox.pingUntilAvailable();
-  await LibeufinSandboxApi.createBankAccount(sandbox, {
-    iban: "DE71500105179674997361",
-    bic: "BELADEBEXXX",
-    name: "Mock Name",
-    label: "mock-account",
-  });
+  await LibeufinSandboxApi.createDemobankAccount(
+    "mock-account",
+    "password-unused",
+    { baseUrl: sandbox.baseUrl + "/demobanks/default/access-api/" },
+    "DE71500105179674997361"
+  );
   await LibeufinSandboxApi.simulateIncomingTransaction(
     sandbox,
     "mock-account",

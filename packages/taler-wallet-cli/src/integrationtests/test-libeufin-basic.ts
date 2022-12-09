@@ -81,41 +81,37 @@ export async function createLibeufinTestEnvironment(
 
   await LibeufinSandboxApi.createEbicsHost(libeufinSandbox, "host01");
   // Subscriber and bank Account for the exchange
-  await LibeufinSandboxApi.createEbicsSubscriber(libeufinSandbox, {
-    hostID: "host01",
-    partnerID: "partner01",
-    userID: "user01",
-  });
-  await LibeufinSandboxApi.createEbicsBankAccount(libeufinSandbox, {
-    bic: "DEUTDEBB101",
-    iban: exchangeIban,
-    label: "exchangeacct",
-    name: "Taler Exchange",
-    subscriber: {
+  await LibeufinSandboxApi.createDemobankAccount(
+    "exchangeacct",
+    "password-unused",
+    { baseUrl: libeufinSandbox.baseUrl + "/demobanks/default/access-api/" },
+    exchangeIban
+  );
+  await LibeufinSandboxApi.createDemobankEbicsSubscriber(
+    {
       hostID: "host01",
       partnerID: "partner01",
       userID: "user01",
     },
-  });
-  // Subscriber and bank Account for the merchant
-  // (Merchant doesn't need EBICS access, but sandbox right now only supports EBICS
-  // accounts.)
-  await LibeufinSandboxApi.createEbicsSubscriber(libeufinSandbox, {
-    hostID: "host01",
-    partnerID: "partner02",
-    userID: "user02",
-  });
-  await LibeufinSandboxApi.createEbicsBankAccount(libeufinSandbox, {
-    bic: "AUTOATW1XXX",
-    iban: merchantIban,
-    label: "merchantacct",
-    name: "Merchant",
-    subscriber: {
+    "exchangeacct",
+    { baseUrl: libeufinSandbox.baseUrl + "/demobanks/default/" }
+  );
+
+  await LibeufinSandboxApi.createDemobankAccount(
+    "merchantacct",
+    "password-unused",
+    { baseUrl: libeufinSandbox.baseUrl + "/demobanks/default/access-api/" },
+    merchantIban
+  );
+  await LibeufinSandboxApi.createDemobankEbicsSubscriber(
+    {
       hostID: "host01",
       partnerID: "partner02",
       userID: "user02",
     },
-  });
+    "merchantacct",
+    { baseUrl: libeufinSandbox.baseUrl + "/demobanks/default/" },
+  );
 
   await LibeufinNexusApi.createEbicsBankConnection(libeufinNexus, {
     name: "myconn",

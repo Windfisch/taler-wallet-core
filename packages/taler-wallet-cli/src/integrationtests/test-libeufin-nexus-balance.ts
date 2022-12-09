@@ -23,6 +23,7 @@ import {
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinNexusApi,
+  LibeufinCli
 } from "../harness/libeufin.js";
 
 /**
@@ -66,7 +67,6 @@ export async function runLibeufinNexusBalanceTest(t: GlobalTestState) {
     "EUR:10",
     "first payment",
   );
-
   // user 01 gets another 10
   await libeufinServices.libeufinSandbox.makeTransaction(
     user02sandbox.ebicsBankAccount.label, // debit

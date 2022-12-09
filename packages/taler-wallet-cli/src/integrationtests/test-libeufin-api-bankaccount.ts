@@ -49,22 +49,21 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
   await sandbox.start();
   await sandbox.pingUntilAvailable();
   await LibeufinSandboxApi.createEbicsHost(sandbox, "mock");
-  await LibeufinSandboxApi.createEbicsSubscriber(sandbox, {
-    hostID: "mock",
-    userID: "mock",
-    partnerID: "mock",
-  });
-  await LibeufinSandboxApi.createEbicsBankAccount(sandbox, {
-    subscriber: {
+  await LibeufinSandboxApi.createDemobankAccount(
+    "mock",
+    "password-unused",
+    { baseUrl: sandbox.baseUrl + "/demobanks/default/access-api/" },
+    "DE71500105179674997361"
+  );
+  await LibeufinSandboxApi.createDemobankEbicsSubscriber(
+    {
       hostID: "mock",
       partnerID: "mock",
       userID: "mock",
     },
-    iban: "DE71500105179674997361",
-    bic: "BELADEBEXXX",
-    name: "mock",
-    label: "mock",
-  });
+    "mock",
+    { baseUrl: sandbox.baseUrl + "/demobanks/default/" }
+  );
   await LibeufinNexusApi.createEbicsBankConnection(nexus, {
     name: "bankaccount-api-test-connection",
     ebicsURL: "http://localhost:5012/ebicsweb",

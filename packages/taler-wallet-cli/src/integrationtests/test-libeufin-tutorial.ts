@@ -49,7 +49,7 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
     nexusUrl: libeufinNexus.baseUrl,
     sandboxDatabaseUri: `jdbc:sqlite:${t.testDir}/libeufin-sandbox.sqlite3`,
     nexusDatabaseUri: `jdbc:sqlite:${t.testDir}/libeufin-nexus.sqlite3`,
-    user: nexusUser,
+    nexusUser: nexusUser,
   });
 
   const ebicsDetails = {

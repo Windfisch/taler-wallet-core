@@ -33,18 +33,17 @@ export async function runLibeufinApiSandboxCamtTest(t: GlobalTestState) {
   });
   await sandbox.start();
   await sandbox.pingUntilAvailable();
-  await LibeufinSandboxApi.createBankAccount(sandbox, {
-    iban: "DE71500105179674997361",
-    bic: "BELADEBEXXX",
-    name: "Mock Name",
-    label: "mock-account-0",
-  });
-  await LibeufinSandboxApi.createBankAccount(sandbox, {
-    iban: "DE71500105179674997361",
-    bic: "BELADEBEXXX",
-    name: "Mock Name",
-    label: "mock-account-1",
-  });
+  
+  await LibeufinSandboxApi.createDemobankAccount(
+    "mock-account-0",
+    "password-unused",
+    { baseUrl: sandbox.baseUrl + "/demobanks/default/access-api/" }
+  );
+  await LibeufinSandboxApi.createDemobankAccount(
+    "mock-account-1",
+    "password-unused",
+    { baseUrl: sandbox.baseUrl + "/demobanks/default/access-api/" }
+  );
   await sandbox.makeTransaction(
     "mock-account-0",
     "mock-account-1",

@@ -32,19 +32,19 @@ export async function runLibeufinSandboxWireTransferCliTest(
   });
   await sandbox.start();
   await sandbox.pingUntilAvailable();
-  await LibeufinSandboxApi.createBankAccount(sandbox, {
-    iban: "DE71500105179674997361",
-    bic: "BELADEBEXXX",
-    name: "Mock Name",
-    label: "mock-account",
-  });
+  await LibeufinSandboxApi.createDemobankAccount(
+    "mock-account",
+    "password-unused",
+    { baseUrl: sandbox.baseUrl + "/demobanks/default/access-api/" },
+    "DE71500105179674997361"
+  );
+  await LibeufinSandboxApi.createDemobankAccount(
+    "mock-account-2",
+    "password-unused",
+    { baseUrl: sandbox.baseUrl + "/demobanks/default/access-api/" },
+    "DE71500105179674997364"
+  );
 
-  await LibeufinSandboxApi.createBankAccount(sandbox, {
-    iban: "DE71500105179674997364",
-    bic: "BELADEBEXXX",
-    name: "Mock Name 2",
-    label: "mock-account-2",
-  });
   await sandbox.makeTransaction(
     "mock-account",
     "mock-account-2",

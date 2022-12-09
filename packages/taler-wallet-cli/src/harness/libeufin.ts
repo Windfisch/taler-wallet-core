@@ -27,7 +27,7 @@
  * Imports.
  */
 import axios from "axios";
-import { URL } from "@gnu-taler/taler-util";
+import { URL, Logger } from "@gnu-taler/taler-util";
 import {
   GlobalTestState,
   DbInfo,
@@ -55,6 +55,9 @@ import {
   PostNexusPermissionRequest,
   CreateNexusUserRequest,
 } from "../harness/libeufin-apis.js";
+
+
+const logger = new Logger("libeufin.ts");
 
 export { LibeufinSandboxApi, LibeufinNexusApi };
 
@@ -125,7 +128,7 @@ export interface LibeufinCliDetails {
   sandboxUrl: string;
   nexusDatabaseUri: string;
   sandboxDatabaseUri: string;
-  user: LibeufinNexusUser;
+  nexusUser: LibeufinNexusUser;
 }
 
 export interface LibeufinEbicsSubscriberDetails {
@@ -448,6 +451,21 @@ export class LibeufinCli {
     );
   }
 
+  async registerBankCustomer(username: string, password: string): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-registercustomer",
+      "libeufin-cli sandbox demobank register --name='Test Customer'",
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl + "/demobanks/default",
+        LIBEUFIN_SANDBOX_USERNAME: username,
+        LIBEUFIN_SANDBOX_PASSWORD: password,
+      },
+    );
+    console.log(stdout);
+  }
+
   async createEbicsHost(hostId: string): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
@@ -528,8 +546,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -546,8 +564,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -562,8 +580,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -577,8 +595,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -592,8 +610,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -607,8 +625,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -627,8 +645,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -642,8 +660,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -657,8 +675,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -678,8 +696,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -698,8 +716,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -716,8 +734,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -734,8 +752,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -749,8 +767,8 @@ export class LibeufinCli {
       {
         ...process.env,
         LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
-        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
-        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.nexusUser.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.nexusUser.password,
       },
     );
     console.log(stdout);
@@ -773,7 +791,7 @@ interface NewTalerWireGatewayReq {
 
 /**
  * Launch Nexus and Sandbox AND creates users / facades / bank accounts /
- * .. all that's required to start making banking traffic.
+ * .. all that's required to start making bank traffic.
  */
 export async function launchLibeufinServices(
   t: GlobalTestState,
@@ -799,7 +817,7 @@ export async function launchLibeufinServices(
   await libeufinNexus.start();
   await libeufinNexus.pingUntilAvailable();
   console.log("Libeufin services launched!");
-
+  
   for (let sb of sandboxUserBundle) {
     await LibeufinSandboxApi.createEbicsHost(
       libeufinSandbox,
@@ -809,9 +827,15 @@ export async function launchLibeufinServices(
       libeufinSandbox,
       sb.ebicsBankAccount.subscriber,
     );
-    await LibeufinSandboxApi.createEbicsBankAccount(
-      libeufinSandbox,
-      sb.ebicsBankAccount,
+    await LibeufinSandboxApi.createDemobankAccount(
+      sb.ebicsBankAccount.label,
+      "password-unused",
+      { baseUrl: libeufinSandbox.baseUrl + "/demobanks/default/access-api/" }
+    );
+    await LibeufinSandboxApi.createDemobankEbicsSubscriber(
+      sb.ebicsBankAccount.subscriber,
+      sb.ebicsBankAccount.label,
+      { baseUrl: libeufinSandbox.baseUrl + "/demobanks/default/" }
     );
   }
   console.log("Sandbox user(s) / account(s) / subscriber(s): created");

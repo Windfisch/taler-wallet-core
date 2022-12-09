@@ -7,7 +7,7 @@
 
 import axiosImp from "axios";
 const axios = axiosImp.default;
-import { URL } from "@gnu-taler/taler-util";
+import { Logger, URL } from "@gnu-taler/taler-util";
 
 export interface LibeufinSandboxServiceInterface {
   baseUrl: string;
@@ -167,13 +167,12 @@ function getRandomString(): string {
   return Math.random().toString(36).substring(2);
 }
 
+/**
+ * APIs spread accross Legacy and Access, it is therefore
+ * the "base URL" relative to which API every call addresses.
+ */
 export namespace LibeufinSandboxApi {
-  /**
-   * Return balance and payto-address of 'accountLabel'.
-   * Note: the demobank serving the request is hard-coded
-   * inside the base URL, and therefore contained in
-   * 'libeufinSandboxService'.
-   */
+  // Need Access API base URL.
   export async function demobankAccountInfo(
     username: string,
     password: string,
@@ -193,18 +192,24 @@ export namespace LibeufinSandboxApi {
   }
 
   // Creates one bank account via the Access API.
+  // Need the /demobanks/$id/access-api as the base URL
   export async function createDemobankAccount(
     username: string,
     password: string,
     libeufinSandboxService: LibeufinSandboxServiceInterface,
+    iban: string|null = null,
   ) {
-    let url = new URL("testing/register", libeufinSandboxService.baseUrl);
+    let url = new URL(
+      "testing/register",
+      libeufinSandboxService.baseUrl
+    );
     await axios.post(url.href, {
       username: username,
       password: password,
+      iban: iban
     });
   }
-
+  // Need /demobanks/$id as the base URL
   export async function createDemobankEbicsSubscriber(
     req: CreateEbicsSubscriberRequest,
     demobankAccountLabel: string,
@@ -213,7 +218,10 @@ export namespace LibeufinSandboxApi {
     password: string = "secret",
   ) {
     // baseUrl should already be pointed to one demobank.
-    let url = new URL("ebics/subscribers", libeufinSandboxService.baseUrl);
+    let url = new URL(
+      "ebics/subscribers",
+       libeufinSandboxService.baseUrl
+       );
     await axios.post(
       url.href,
       {
@@ -301,6 +309,10 @@ export namespace LibeufinSandboxApi {
     });
   }
 
+  /**
+   * Create a new bank account and associate it to
+   * a existing EBICS subscriber.
+   */
   export async function createEbicsBankAccount(
     libeufinSandboxService: LibeufinSandboxServiceInterface,
     req: CreateEbicsBankAccountRequest,
@@ -712,7 +724,7 @@ export namespace LibeufinNexusApi {
   ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(`/bank-accounts/${bankAccountName}/schedule`, baseUrl);
-    if (taskName) url = new URL(taskName, `${url}/`);
+    if (taskName) url = new URL(taskName, `${url.href}/`);
 
     // It's caller's responsibility to interpret the response.
     return await axios.get(url.href, {
