@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -14,14 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-/**
- *
- * @author Sebastian Javier Marchano (sebasjm)
- */
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import emptyImage from "../../assets/empty.png";
-import { TextInputProps } from "./TextInput";
+import { TextInputProps } from "./TextInput.js";
 
 const MAX_IMAGE_UPLOAD_SIZE = 1024 * 1024;
 

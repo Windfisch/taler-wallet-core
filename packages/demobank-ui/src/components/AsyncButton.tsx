@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -21,9 +21,7 @@
 
 import { ComponentChildren, h, VNode } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
-// import { LoadingModal } from "../modal";
-import { useAsync } from "../hooks/async";
-// import { Translate } from "../../i18n";
+import { useAsync } from "../hooks/async.js";
 
 type Props = {
   children: ComponentChildren;

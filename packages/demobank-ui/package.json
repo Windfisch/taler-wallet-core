@@ -20,6 +20,20 @@
     "qrcode-generator": "^1.4.4",
     "swr": "1.3.0"
   },
+  "eslintConfig": {
+    "plugins": [
+      "header"
+    ],
+    "rules": {
+      "header/header": [
+        2,
+        "copyleft-header.js"
+      ]
+    },
+    "extends": [
+      "prettier"
+    ]
+  },
   "devDependencies": {
     "@creativebulma/bulma-tooltip": "^1.2.0",
     "@gnu-taler/pogen": "^0.0.5",
@@ -30,7 +44,6 @@
     "bulma-checkbox": "^1.1.1",
     "bulma-radio": "^1.1.1",
     "esbuild": "^0.15.12",
-    "eslint": "^8.26.0",
     "eslint-config-preact": "^1.2.0",
     "po2json": "^0.4.5",
     "sass": "1.56.1",
