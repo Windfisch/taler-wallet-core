@@ -19,7 +19,10 @@ import { route } from "preact-router";
 import { StateUpdater, useState } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
-import { useTranslationContext } from "../../context/translation.js";
+import {
+  InternationalizationAPI,
+  useTranslationContext,
+} from "../../context/translation.js";
 import { BackendStateHandler } from "../../hooks/backend.js";
 import { bankUiSettings } from "../../settings.js";
 import { getBankBackendBaseUrl, undefinedIfEmpty } from "../../utils.js";
@@ -148,6 +151,7 @@ function RegistrationForm(): VNode {
                     { username, password },
                     backend, // will store BE URL, if OK.
                     pageStateSetter,
+                    i18n,
                   );
 
                   setUsername(undefined);
@@ -193,6 +197,7 @@ async function registrationCall(
    */
   backend: BackendStateHandler,
   pageStateSetter: StateUpdater<PageStateType>,
+  i18n: InternationalizationAPI,
 ): Promise<void> {
   const url = getBankBackendBaseUrl();
 
@@ -218,7 +223,7 @@ async function registrationCall(
       ...prevState,
 
       error: {
-        title: `Registration failed, please report`,
+        title: i18n.str`Registration failed, please report`,
         debug: JSON.stringify(error),
       },
     }));
@@ -231,7 +236,7 @@ async function registrationCall(
         ...prevState,
 
         error: {
-          title: `That username is already taken`,
+          title: i18n.str`That username is already taken`,
           debug: JSON.stringify(response),
         },
       }));
@@ -240,7 +245,7 @@ async function registrationCall(
         ...prevState,
 
         error: {
-          title: `New registration gave response error`,
+          title: i18n.str`New registration gave response error`,
           debug: JSON.stringify(response),
         },
       }));

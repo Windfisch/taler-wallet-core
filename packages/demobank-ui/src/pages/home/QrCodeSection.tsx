@@ -44,9 +44,11 @@ export function QrCodeSection({
           <p>{i18n.str`Use this QR code to withdraw to your mobile wallet:`}</p>
           {QR({ text: talerWithdrawUri })}
           <p>
-            Click{" "}
-            <a id="linkqr" href={talerWithdrawUri}>{i18n.str`this link`}</a> to
-            open your Taler wallet!
+            <i18n.Translate>
+              Click{" "}
+              <a id="linkqr" href={talerWithdrawUri}>{i18n.str`this link`}</a>{" "}
+              to open your Taler wallet!
+            </i18n.Translate>
           </p>
           <br />
           {abortButton}

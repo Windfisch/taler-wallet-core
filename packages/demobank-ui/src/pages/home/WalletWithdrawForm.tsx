@@ -19,7 +19,10 @@ import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
-import { useTranslationContext } from "../../context/translation.js";
+import {
+  InternationalizationAPI,
+  useTranslationContext,
+} from "../../context/translation.js";
 import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders, validateAmount } from "../../utils.js";
 
@@ -91,6 +94,7 @@ export function WalletWithdrawForm({
                 `${currency}:${submitAmount}`,
                 backend.state,
                 pageStateSetter,
+                i18n,
               );
             }}
           />
@@ -113,6 +117,7 @@ async function createWithdrawalCall(
   amount: string,
   backendState: BackendState,
   pageStateSetter: StateUpdater<PageStateType>,
+  i18n: InternationalizationAPI,
 ): Promise<void> {
   if (backendState?.status === "loggedOut") {
     logger.error("Page has a problem: no credentials found in the state.");
@@ -120,7 +125,7 @@ async function createWithdrawalCall(
       ...prevState,
 
       error: {
-        title: "No credentials given.",
+        title: i18n.str`No credentials given.`,
       },
     }));
     return;
@@ -147,7 +152,7 @@ async function createWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `Could not create withdrawal operation`,
+        title: i18n.str`Could not create withdrawal operation`,
         description: (error as any).error.description,
         debug: JSON.stringify(error),
       },
@@ -163,7 +168,7 @@ async function createWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `Withdrawal creation gave response error`,
+        title: i18n.str`Withdrawal creation gave response error`,
         description: response.error.description,
         debug: JSON.stringify(response),
       },

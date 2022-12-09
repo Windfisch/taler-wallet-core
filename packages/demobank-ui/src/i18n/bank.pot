@@ -82,104 +82,139 @@ msgstr ""
 msgid "Register"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:57
+#: src/pages/home/PaytoWireTransferForm.tsx:60
 #, c-format
 msgid "Missing IBAN"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:59
+#: src/pages/home/PaytoWireTransferForm.tsx:62
 #, c-format
 msgid "IBAN should have just uppercased letters and numbers"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:61
+#: src/pages/home/PaytoWireTransferForm.tsx:64
 #, c-format
 msgid "Missing subject"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:63
+#: src/pages/home/PaytoWireTransferForm.tsx:66
 #, c-format
 msgid "Missing amount"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:65
+#: src/pages/home/PaytoWireTransferForm.tsx:68
 #, c-format
 msgid "Amount is not valid"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:67
+#: src/pages/home/PaytoWireTransferForm.tsx:70
 #, c-format
 msgid "Should be greater than 0"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:76
+#: src/pages/home/PaytoWireTransferForm.tsx:79
 #, c-format
 msgid "Receiver IBAN:"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:99
+#: src/pages/home/PaytoWireTransferForm.tsx:102
 #, c-format
 msgid "Transfer subject:"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:120
+#: src/pages/home/PaytoWireTransferForm.tsx:123
 #, c-format
 msgid "Amount:"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:174
+#: src/pages/home/PaytoWireTransferForm.tsx:177
 #, c-format
 msgid "Field(s) missing."
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:223
+#: src/pages/home/PaytoWireTransferForm.tsx:227
 #, c-format
 msgid "Want to try the raw payto://-format?"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:231
+#: src/pages/home/PaytoWireTransferForm.tsx:235
 #, c-format
 msgid "Missing payto address"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:233
+#: src/pages/home/PaytoWireTransferForm.tsx:237
 #, c-format
 msgid "Payto does not follow the pattern"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:239
+#: src/pages/home/PaytoWireTransferForm.tsx:243
 #, c-format
 msgid "Transfer money to account identified by payto:// URI:"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:242
+#: src/pages/home/PaytoWireTransferForm.tsx:246
 #, c-format
 msgid "payto URI:"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:251
+#: src/pages/home/PaytoWireTransferForm.tsx:255
 #, c-format
 msgid "payto address"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:275
+#: src/pages/home/PaytoWireTransferForm.tsx:279
 #, c-format
 msgid "Send"
 msgstr ""
 
-#: src/pages/home/PaytoWireTransferForm.tsx:309
+#: src/pages/home/PaytoWireTransferForm.tsx:314
 #, c-format
 msgid "Use wire-transfer form?"
 msgstr ""
 
-#: src/pages/home/WalletWithdrawForm.tsx:47
+#: src/pages/home/PaytoWireTransferForm.tsx:373
+#, c-format
+msgid "No credentials found."
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:397
+#, c-format
+msgid "Could not create the wire transfer"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:414
+#, c-format
+msgid "Transfer creation gave response error"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:426
+#, c-format
+msgid "Wire transfer created!"
+msgstr ""
+
+#: src/pages/home/WalletWithdrawForm.tsx:50
 #, c-format
 msgid "Amount to withdraw:"
 msgstr ""
 
-#: src/pages/home/WalletWithdrawForm.tsx:81
+#: src/pages/home/WalletWithdrawForm.tsx:84
 #, c-format
 msgid "Withdraw"
+msgstr ""
+
+#: src/pages/home/WalletWithdrawForm.tsx:128
+#, c-format
+msgid "No credentials given."
+msgstr ""
+
+#: src/pages/home/WalletWithdrawForm.tsx:155
+#, c-format
+msgid "Could not create withdrawal operation"
+msgstr ""
+
+#: src/pages/home/WalletWithdrawForm.tsx:171
+#, c-format
+msgid "Withdrawal creation gave response error"
 msgstr ""
 
 #: src/pages/home/PaymentOptions.tsx:44
@@ -222,46 +257,86 @@ msgstr ""
 msgid "Use this QR code to withdraw to your mobile wallet:"
 msgstr ""
 
-#: src/pages/home/QrCodeSection.tsx:48
+#: src/pages/home/QrCodeSection.tsx:47
 #, c-format
-msgid "this link"
+msgid "Click %1$s to open your Taler wallet!"
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:44
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:47
 #, c-format
 msgid "Confirm Withdrawal"
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:49
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:52
 #, c-format
 msgid "Authorize withdrawal by solving challenge"
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:52
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:55
 #, c-format
 msgid "What is"
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:90
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:94
 #, c-format
 msgid "Answer is wrong."
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:95
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:99
 #, c-format
 msgid "Confirm"
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:108
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:113
 #, c-format
 msgid "Cancel"
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:115
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:120
 #, c-format
 msgid ""
 "A this point, a %1$s bank would ask for an additional authentication proof "
 "(PIN/TAN, one time password, ..), instead of a simple calculation."
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:155
+#, c-format
+msgid "\\"No credentials found."
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:166
+#, c-format
+msgid "No withdrawal ID found."
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:201
+#, c-format
+msgid "Could not confirm the withdrawal"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:219
+#, c-format
+msgid "Withdrawal confirmation gave response error"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:231
+#, c-format
+msgid "Withdrawal confirmed!"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:294
+#, c-format
+msgid "Could not abort the withdrawal."
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:311
+#, c-format
+msgid "Withdrawal abortion failed."
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:324
+#, c-format
+msgid "Withdrawal aborted!"
 msgstr ""
 
 #: src/pages/home/WithdrawalQRCode.tsx:54
@@ -339,29 +414,44 @@ msgstr ""
 msgid "History of public accounts"
 msgstr ""
 
-#: src/pages/home/RegistrationPage.tsx:36
+#: src/pages/home/RegistrationPage.tsx:39
 #, c-format
 msgid "Currently, the bank is not accepting new registrations!"
 msgstr ""
 
-#: src/pages/home/RegistrationPage.tsx:65
+#: src/pages/home/RegistrationPage.tsx:68
 #, c-format
 msgid "Use only letter and numbers starting with a lower case letter"
 msgstr ""
 
-#: src/pages/home/RegistrationPage.tsx:75
+#: src/pages/home/RegistrationPage.tsx:78
 #, c-format
 msgid "Password don't match"
 msgstr ""
 
-#: src/pages/home/RegistrationPage.tsx:86
+#: src/pages/home/RegistrationPage.tsx:89
 #, c-format
 msgid "Please register!"
 msgstr ""
 
-#: src/pages/home/RegistrationPage.tsx:123
+#: src/pages/home/RegistrationPage.tsx:126
 #, c-format
 msgid "Repeat Password:"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:226
+#, c-format
+msgid "Registration failed, please report"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:239
+#, c-format
+msgid "That username is already taken"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:248
+#, c-format
+msgid "New registration gave response error"
 msgstr ""
 
 #: src/components/menu/SideBar.tsx:53

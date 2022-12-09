@@ -14,36 +14,30 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-/**
- *
- * @author Sebastian Javier Marchano (sebasjm)
- */
-
 import { i18n, setupI18n } from "@gnu-taler/taler-util";
 import { ComponentChildren, createContext, h, VNode } from "preact";
 import { useContext, useEffect } from "preact/hooks";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { strings } from "../i18n/strings.js";
 
+
+export type InternationalizationAPI = typeof i18n
+
 interface Type {
   lang: string;
   supportedLang: { [id in keyof typeof supportedLang]: string };
   changeLanguage: (l: string) => void;
-  i18n: typeof i18n;
+  i18n: InternationalizationAPI;
   isSaved: boolean;
 }
 
 const supportedLang = {
-  es: "Español [es]",
-  ja: "日本語 [ja]",
+  es: "Espanol [es]",
   en: "English [en]",
-  fr: "Français [fr]",
+  fr: "Francais [fr]",
   de: "Deutsch [de]",
   sv: "Svenska [sv]",
-  it: "Italiano [it]",
-  // ko: "한국어 [ko]",
-  // ru: "Ру́сский язы́к [ru]",
-  tr: "Türk [tr]",
+  it: "Italiane [it]",
   navigator: "Defined by navigator",
 };
 

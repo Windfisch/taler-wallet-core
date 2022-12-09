@@ -20,7 +20,10 @@ import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
-import { useTranslationContext } from "../../context/translation.js";
+import {
+  InternationalizationAPI,
+  useTranslationContext,
+} from "../../context/translation.js";
 import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders, undefinedIfEmpty } from "../../utils.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
@@ -192,6 +195,7 @@ export function PaytoWireTransferForm({
                       iban: undefined,
                       subject: undefined,
                     })),
+                  i18n,
                 );
               }}
             />
@@ -291,6 +295,7 @@ export function PaytoWireTransferForm({
                 backend.state,
                 pageStateSetter,
                 () => rawPaytoInputSetter(undefined),
+                i18n,
               );
             }}
           />
@@ -357,6 +362,7 @@ async function createTransactionCall(
    * a stateful management of the input data yet.
    */
   cleanUpForm: () => void,
+  i18n: InternationalizationAPI,
 ): Promise<void> {
   if (backendState.status === "loggedOut") {
     logger.error("No credentials found.");
@@ -364,7 +370,7 @@ async function createTransactionCall(
       ...prevState,
 
       error: {
-        title: "No credentials found.",
+        title: i18n.str`No credentials found.`,
       },
     }));
     return;
@@ -388,7 +394,7 @@ async function createTransactionCall(
       ...prevState,
 
       error: {
-        title: `Could not create the wire transfer`,
+        title: i18n.str`Could not create the wire transfer`,
         description: (error as any).error.description,
         debug: JSON.stringify(error),
       },
@@ -405,7 +411,7 @@ async function createTransactionCall(
       ...prevState,
 
       error: {
-        title: `Transfer creation gave response error`,
+        title: i18n.str`Transfer creation gave response error`,
         description: response.error.description,
         debug: JSON.stringify(response),
       },
@@ -417,7 +423,7 @@ async function createTransactionCall(
   pageStateSetter((prevState) => ({
     ...prevState,
 
-    info: "Wire transfer created!",
+    info: i18n.str`Wire transfer created!`,
   }));
 
   // Only at this point the input data can

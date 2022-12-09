@@ -19,7 +19,10 @@ import { Fragment, h, VNode } from "preact";
 import { StateUpdater } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
-import { useTranslationContext } from "../../context/translation.js";
+import {
+  InternationalizationAPI,
+  useTranslationContext,
+} from "../../context/translation.js";
 import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders } from "../../utils.js";
 
@@ -80,6 +83,7 @@ export function WithdrawalConfirmationQuestion(): VNode {
                         backend.state,
                         pageState.withdrawalId,
                         pageStateSetter,
+                        i18n,
                       );
                       return;
                     }
@@ -102,6 +106,7 @@ export function WithdrawalConfirmationQuestion(): VNode {
                       backend.state,
                       pageState.withdrawalId,
                       pageStateSetter,
+                      i18n,
                     )
                   }
                 >
@@ -139,6 +144,7 @@ async function confirmWithdrawalCall(
   backendState: BackendState,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
+  i18n: InternationalizationAPI,
 ): Promise<void> {
   if (backendState.status === "loggedOut") {
     logger.error("No credentials found.");
@@ -146,7 +152,7 @@ async function confirmWithdrawalCall(
       ...prevState,
 
       error: {
-        title: "No credentials found.",
+        title: i18n.str`"No credentials found.`,
       },
     }));
     return;
@@ -157,7 +163,7 @@ async function confirmWithdrawalCall(
       ...prevState,
 
       error: {
-        title: "No withdrawal ID found.",
+        title: i18n.str`No withdrawal ID found.`,
       },
     }));
     return;
@@ -192,7 +198,7 @@ async function confirmWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `Could not confirm the withdrawal`,
+        title: i18n.str`Could not confirm the withdrawal`,
         description: (error as any).error.description,
         debug: JSON.stringify(error),
       },
@@ -210,7 +216,7 @@ async function confirmWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `Withdrawal confirmation gave response error`,
+        title: i18n.str`Withdrawal confirmation gave response error`,
         debug: JSON.stringify(response),
       },
     }));
@@ -222,7 +228,7 @@ async function confirmWithdrawalCall(
     return {
       ...rest,
 
-      info: "Withdrawal confirmed!",
+      info: i18n.str`Withdrawal confirmed!`,
     };
   });
 }
@@ -234,6 +240,7 @@ async function abortWithdrawalCall(
   backendState: BackendState,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
+  i18n: InternationalizationAPI,
 ): Promise<void> {
   if (backendState.status === "loggedOut") {
     logger.error("No credentials found.");
@@ -241,7 +248,7 @@ async function abortWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `No credentials found.`,
+        title: i18n.str`No credentials found.`,
       },
     }));
     return;
@@ -252,7 +259,7 @@ async function abortWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `No withdrawal ID found.`,
+        title: i18n.str`No withdrawal ID found.`,
       },
     }));
     return;
@@ -284,7 +291,7 @@ async function abortWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `Could not abort the withdrawal.`,
+        title: i18n.str`Could not abort the withdrawal.`,
         description: (error as any).error.description,
         debug: JSON.stringify(error),
       },
@@ -301,7 +308,7 @@ async function abortWithdrawalCall(
       ...prevState,
 
       error: {
-        title: `Withdrawal abortion failed.`,
+        title: i18n.str`Withdrawal abortion failed.`,
         description: response.error.description,
         debug: JSON.stringify(response),
       },
@@ -314,7 +321,7 @@ async function abortWithdrawalCall(
     return {
       ...rest,
 
-      info: "Withdrawal aborted!",
+      info: i18n.str`Withdrawal aborted!`,
     };
   });
 }
