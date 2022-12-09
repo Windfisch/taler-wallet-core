@@ -38,7 +38,6 @@ export async function serve(opts: {
 
   app.use(PATHS.APP, express.static(opts.folder));
   const server = https.createServer(httpServerOptions, app);
-  server.listen(opts.port);
   logger.info(`serving ${opts.folder} on ${opts.port}`);
   logger.info(`  ${PATHS.APP}: application`);
   logger.info(`  ${PATHS.EXAMPLE}: examples`);
@@ -74,20 +73,27 @@ export async function serve(opts: {
     logger.info(`watching ${watchingFolder} for change`);
 
     chokidar.watch(watchingFolder).on("change", (path, stats) => {
-      logger.trace(`changed ${path}`);
+      logger.info(`changed ${path}`);
 
-      sendToAllClients({ type: "file-updated-start", data: { path } });
       if (opts.onUpdate) {
+        sendToAllClients({ type: "file-updated-start", data: { path } });
         opts.onUpdate().then((result) => {
           sendToAllClients({
             type: "file-updated-done",
             data: { path, result },
           });
+        }).catch((error) => {
+          sendToAllClients({
+            type: "file-updated-failed",
+            data: { path, error },
+          });
         });
       } else {
-        sendToAllClients({ type: "file-change-done", data: { path } });
+        sendToAllClients({ type: "file-change", data: { path } });
       }
     });
+
+    if (opts.onUpdate) opts.onUpdate()
 
     app.get(PATHS.EXAMPLE, function (req: any, res: any) {
       res.set("Content-Type", "text/html");
@@ -107,5 +113,7 @@ export async function serve(opts: {
     app.get(PATHS.NOTIFY, function (req: any, res: any) {
       res.send("ok");
     });
+
+    server.listen(opts.port);
   }
 }
