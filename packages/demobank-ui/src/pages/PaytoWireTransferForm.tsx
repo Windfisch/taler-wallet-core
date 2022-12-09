@@ -18,14 +18,14 @@ import { Amounts, Logger, parsePaytoUri } from "@gnu-taler/taler-util";
 import { useLocalStorage } from "@gnu-taler/web-util/lib/index.browser";
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
-import { useBackendContext } from "../../context/backend.js";
-import { PageStateType, usePageContext } from "../../context/pageState.js";
+import { useBackendContext } from "../context/backend.js";
+import { PageStateType, usePageContext } from "../context/pageState.js";
 import {
   InternationalizationAPI,
   useTranslationContext,
 } from "@gnu-taler/web-util/lib/index.browser";
-import { BackendState } from "../../hooks/backend.js";
-import { prepareHeaders, undefinedIfEmpty } from "../../utils.js";
+import { BackendState } from "../hooks/backend.js";
+import { prepareHeaders, undefinedIfEmpty } from "../utils.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
 
 const logger = new Logger("PaytoWireTransferForm");

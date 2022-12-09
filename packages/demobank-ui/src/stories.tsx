@@ -20,7 +20,7 @@
  */
 import { strings } from "./i18n/strings.js";
 
-import * as pages from "./pages/home/index.stories.js";
+import * as pages from "./pages/index.stories.js";
 
 import { renderStories } from "@gnu-taler/web-util/lib/index.browser";
 

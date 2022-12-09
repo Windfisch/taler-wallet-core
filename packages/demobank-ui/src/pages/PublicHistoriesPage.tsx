@@ -20,9 +20,9 @@ import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
 import { StateUpdater } from "preact/hooks";
 import useSWR, { SWRConfig } from "swr";
-import { PageStateType, usePageContext } from "../../context/pageState.js";
+import { PageStateType, usePageContext } from "../context/pageState.js";
 import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
-import { getBankBackendBaseUrl } from "../../utils.js";
+import { getBankBackendBaseUrl } from "../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { Transactions } from "./Transactions.js";
 

@@ -18,9 +18,9 @@ import { createHashHistory } from "history";
 import { h, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import { useEffect } from "preact/hooks";
-import { AccountPage } from "./home/AccountPage.js";
-import { PublicHistoriesPage } from "./home/PublicHistoriesPage.js";
-import { RegistrationPage } from "./home/RegistrationPage.js";
+import { AccountPage } from "./AccountPage.js";
+import { PublicHistoriesPage } from "./PublicHistoriesPage.js";
+import { RegistrationPage } from "./RegistrationPage.js";
 
 export function Routing(): VNode {
   const history = createHashHistory();

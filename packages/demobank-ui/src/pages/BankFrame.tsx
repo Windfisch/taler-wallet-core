@@ -16,12 +16,12 @@
 
 import { Logger } from "@gnu-taler/taler-util";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
-import talerLogo from "../../assets/logo-white.svg";
-import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
-import { useBackendContext } from "../../context/backend.js";
-import { PageStateType, usePageContext } from "../../context/pageState.js";
+import talerLogo from "../assets/logo-white.svg";
+import { LangSelectorLikePy as LangSelector } from "../components/LangSelector.js";
+import { useBackendContext } from "../context/backend.js";
+import { PageStateType, usePageContext } from "../context/pageState.js";
 import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
-import { bankUiSettings } from "../../settings.js";
+import { bankUiSettings } from "../settings.js";
 
 const logger = new Logger("BankFrame");
 

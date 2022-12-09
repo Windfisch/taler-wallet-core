@@ -17,7 +17,7 @@
 import { Logger } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import useSWR from "swr";
-import { PageStateType, usePageContext } from "../../context/pageState.js";
+import { PageStateType, usePageContext } from "../context/pageState.js";
 import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import { QrCodeSection } from "./QrCodeSection.js";
 import { WithdrawalConfirmationQuestion } from "./WithdrawalConfirmationQuestion.js";

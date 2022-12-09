@@ -17,11 +17,11 @@
 import { h, VNode } from "preact";
 import { route } from "preact-router";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { useBackendContext } from "../../context/backend.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
-import { BackendStateHandler } from "../../hooks/backend.js";
-import { bankUiSettings } from "../../settings.js";
-import { getBankBackendBaseUrl, undefinedIfEmpty } from "../../utils.js";
+import { BackendStateHandler } from "../hooks/backend.js";
+import { bankUiSettings } from "../settings.js";
+import { getBankBackendBaseUrl, undefinedIfEmpty } from "../utils.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
 
 /**

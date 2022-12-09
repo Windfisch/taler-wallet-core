@@ -16,7 +16,7 @@
 
 import { h, VNode } from "preact";
 import { useEffect } from "preact/hooks";
-import { QR } from "../../components/QR.js";
+import { QR } from "../components/QR.js";
 import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 
 export function QrCodeSection({

@@ -17,15 +17,15 @@ import { Logger } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
 import { StateUpdater, useState } from "preact/hooks";
-import { useBackendContext } from "../../context/backend.js";
-import { PageStateType, usePageContext } from "../../context/pageState.js";
+import { useBackendContext } from "../context/backend.js";
+import { PageStateType, usePageContext } from "../context/pageState.js";
 import {
   InternationalizationAPI,
   useTranslationContext,
 } from "@gnu-taler/web-util/lib/index.browser";
-import { BackendStateHandler } from "../../hooks/backend.js";
-import { bankUiSettings } from "../../settings.js";
-import { getBankBackendBaseUrl, undefinedIfEmpty } from "../../utils.js";
+import { BackendStateHandler } from "../hooks/backend.js";
+import { bankUiSettings } from "../settings.js";
+import { getBankBackendBaseUrl, undefinedIfEmpty } from "../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
 
