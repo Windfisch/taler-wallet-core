@@ -20,7 +20,7 @@
  */
 
 import { h, VNode } from "preact";
-import { useTranslationContext } from "../../context/translation.js";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 
 interface Props {
   mobile?: boolean;

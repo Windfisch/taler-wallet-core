@@ -15,7 +15,7 @@
  */
 
 import { Amounts, Logger, parsePaytoUri } from "@gnu-taler/taler-util";
-import { hooks } from "@gnu-taler/web-util/lib/index.browser";
+import { useLocalStorage } from "@gnu-taler/web-util/lib/index.browser";
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
@@ -23,7 +23,7 @@ import { PageStateType, usePageContext } from "../../context/pageState.js";
 import {
   InternationalizationAPI,
   useTranslationContext,
-} from "../../context/translation.js";
+} from "@gnu-taler/web-util/lib/index.browser";
 import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders, undefinedIfEmpty } from "../../utils.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
@@ -330,7 +330,7 @@ type WireTransferRequestTypeOpt = WireTransferRequestType | undefined;
 function useWireTransferRequestType(
   state?: WireTransferRequestType,
 ): [WireTransferRequestTypeOpt, StateUpdater<WireTransferRequestTypeOpt>] {
-  const ret = hooks.useLocalStorage(
+  const ret = useLocalStorage(
     "wire-transfer-request-state",
     JSON.stringify(state),
   );

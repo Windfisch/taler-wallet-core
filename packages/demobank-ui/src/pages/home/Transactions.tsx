@@ -18,7 +18,7 @@ import { Logger } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect } from "preact/hooks";
 import useSWR from "swr";
-import { useTranslationContext } from "../../context/translation.js";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 
 const logger = new Logger("Transactions");
 /**

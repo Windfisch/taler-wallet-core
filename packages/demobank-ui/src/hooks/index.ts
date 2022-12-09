@@ -20,7 +20,7 @@
  */
 
 import { StateUpdater } from "preact/hooks";
-import { hooks } from "@gnu-taler/web-util/lib/index.browser";
+import { useLocalStorage, useNotNullLocalStorage } from "@gnu-taler/web-util/lib/index.browser";
 export type ValueOrFunction<T> = T | ((p: T) => T);
 
 const calculateRootPath = () => {
@@ -34,11 +34,11 @@ const calculateRootPath = () => {
 export function useBackendURL(
   url?: string,
 ): [string, boolean, StateUpdater<string>, () => void] {
-  const [value, setter] = hooks.useNotNullLocalStorage(
+  const [value, setter] = useNotNullLocalStorage(
     "backend-url",
     url || calculateRootPath(),
   );
-  const [triedToLog, setTriedToLog] = hooks.useLocalStorage("tried-login");
+  const [triedToLog, setTriedToLog] = useLocalStorage("tried-login");
 
   const checkedSetter = (v: ValueOrFunction<string>) => {
     setTriedToLog("yes");
@@ -55,13 +55,13 @@ export function useBackendDefaultToken(): [
   string | undefined,
   StateUpdater<string | undefined>,
 ] {
-  return hooks.useLocalStorage("backend-token");
+  return useLocalStorage("backend-token");
 }
 
 export function useBackendInstanceToken(
   id: string,
 ): [string | undefined, StateUpdater<string | undefined>] {
-  const [token, setToken] = hooks.useLocalStorage(`backend-token-${id}`);
+  const [token, setToken] = useLocalStorage(`backend-token-${id}`);
   const [defaultToken, defaultSetToken] = useBackendDefaultToken();
 
   // instance named 'default' use the default token

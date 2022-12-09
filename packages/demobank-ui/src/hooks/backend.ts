@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { hooks } from "@gnu-taler/web-util/lib/index.browser";
+import { useLocalStorage } from "@gnu-taler/web-util/lib/index.browser";
 
 /**
  * Has the information to reach and
@@ -48,7 +48,7 @@ export interface BackendStateHandler {
  * base URL.
  */
 export function useBackendState(): BackendStateHandler {
-  const [value, update] = hooks.useLocalStorage(
+  const [value, update] = useLocalStorage(
     "backend-state",
     JSON.stringify(defaultState),
   );

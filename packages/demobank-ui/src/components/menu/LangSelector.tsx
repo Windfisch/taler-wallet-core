@@ -21,7 +21,7 @@
 
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { useTranslationContext } from "../../context/translation.js";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import { strings as messages } from "../../i18n/strings.js";
 
 type LangsNames = {

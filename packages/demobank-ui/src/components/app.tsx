@@ -21,8 +21,9 @@ import {
 import { h, FunctionalComponent } from "preact";
 import { BackendStateProvider } from "../context/backend.js";
 import { PageStateProvider } from "../context/pageState.js";
-import { TranslationProvider } from "../context/translation.js";
 import { Routing } from "../pages/Routing.js";
+import { strings } from "../i18n/strings.js";
+import { TranslationProvider } from "@gnu-taler/web-util/lib/index.browser";
 
 /**
  * FIXME:
@@ -43,7 +44,7 @@ import { Routing } from "../pages/Routing.js";
 
 const App: FunctionalComponent = () => {
   return (
-    <TranslationProvider>
+    <TranslationProvider source={strings}>
       <PageStateProvider>
         <BackendStateProvider>
           <Routing />

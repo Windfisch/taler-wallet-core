@@ -15,12 +15,12 @@
  */
 
 import { Amounts, HttpStatusCode, Logger } from "@gnu-taler/taler-util";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useEffect } from "preact/hooks";
 import useSWR, { SWRConfig, useSWRConfig } from "swr";
 import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
-import { useTranslationContext } from "../../context/translation.js";
 import { BackendInfo } from "../../hooks/backend.js";
 import { bankUiSettings } from "../../settings.js";
 import { getIbanFromPayto, prepareHeaders } from "../../utils.js";
@@ -253,7 +253,7 @@ function Account({ accountLabel }: { accountLabel: string }): VNode {
 }
 
 // function useTransactionPageNumber(): [number, StateUpdater<number>] {
-//   const ret = hooks.useNotNullLocalStorage("transaction-page", "0");
+//   const ret = useNotNullLocalStorage("transaction-page", "0");
 //   const retObj = JSON.parse(ret[0]);
 //   const retSetter: StateUpdater<number> = function (val) {
 //     const newVal =

@@ -22,7 +22,7 @@ import { PageStateType, usePageContext } from "../../context/pageState.js";
 import {
   InternationalizationAPI,
   useTranslationContext,
-} from "../../context/translation.js";
+} from "@gnu-taler/web-util/lib/index.browser";
 import { BackendStateHandler } from "../../hooks/backend.js";
 import { bankUiSettings } from "../../settings.js";
 import { getBankBackendBaseUrl, undefinedIfEmpty } from "../../utils.js";

@@ -21,7 +21,7 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useTranslationContext } from "../../context/translation.js";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import "../../scss/DurationPicker.scss";
 
 export interface Props {

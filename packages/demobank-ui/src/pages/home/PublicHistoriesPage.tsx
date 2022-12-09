@@ -15,13 +15,13 @@
  */
 
 import { Logger } from "@gnu-taler/taler-util";
-import { hooks } from "@gnu-taler/web-util/lib/index.browser";
+import { useLocalStorage } from "@gnu-taler/web-util/lib/index.browser";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
 import { StateUpdater } from "preact/hooks";
 import useSWR, { SWRConfig } from "swr";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
-import { useTranslationContext } from "../../context/translation.js";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import { getBankBackendBaseUrl } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { Transactions } from "./Transactions.js";
@@ -169,10 +169,7 @@ function PublicHistories(): VNode {
 function useShowPublicAccount(
   state?: string,
 ): [string | undefined, StateUpdater<string | undefined>] {
-  const ret = hooks.useLocalStorage(
-    "show-public-account",
-    JSON.stringify(state),
-  );
+  const ret = useLocalStorage("show-public-account", JSON.stringify(state));
   const retObj: string | undefined = ret[0] ? JSON.parse(ret[0]) : ret[0];
   const retSetter: StateUpdater<string | undefined> = function (val) {
     const newVal =

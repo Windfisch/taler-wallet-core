@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { hooks } from "@gnu-taler/web-util/lib/index.browser";
+import { useNotNullLocalStorage } from "@gnu-taler/web-util/lib/index.browser";
 import { ComponentChildren, createContext, h, VNode } from "preact";
 import { StateUpdater, useContext } from "preact/hooks";
 
@@ -62,7 +62,7 @@ function usePageState(
     withdrawalInProgress: false,
   },
 ): [PageStateType, StateUpdater<PageStateType>] {
-  const ret = hooks.useNotNullLocalStorage("page-state", JSON.stringify(state));
+  const ret = useNotNullLocalStorage("page-state", JSON.stringify(state));
   const retObj: PageStateType = JSON.parse(ret[0]);
 
   const retSetter: StateUpdater<PageStateType> = function (val) {

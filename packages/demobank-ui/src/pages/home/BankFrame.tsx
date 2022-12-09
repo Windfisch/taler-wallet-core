@@ -20,7 +20,7 @@ import talerLogo from "../../assets/logo-white.svg";
 import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
 import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
-import { useTranslationContext } from "../../context/translation.js";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import { bankUiSettings } from "../../settings.js";
 
 const logger = new Logger("BankFrame");
