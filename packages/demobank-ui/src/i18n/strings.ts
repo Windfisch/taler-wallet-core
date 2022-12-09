@@ -113,10 +113,31 @@ strings['de'] = {
       "Use wire-transfer form?": [
         ""
       ],
+      "No credentials found.": [
+        ""
+      ],
+      "Could not create the wire transfer": [
+        ""
+      ],
+      "Transfer creation gave response error": [
+        ""
+      ],
+      "Wire transfer created!": [
+        ""
+      ],
       "Amount to withdraw:": [
         ""
       ],
       "Withdraw": [
+        ""
+      ],
+      "No credentials given.": [
+        ""
+      ],
+      "Could not create withdrawal operation": [
+        ""
+      ],
+      "Withdrawal creation gave response error": [
         ""
       ],
       "Obtain digital cash": [
@@ -143,7 +164,7 @@ strings['de'] = {
       "Use this QR code to withdraw to your mobile wallet:": [
         ""
       ],
-      "this link": [
+      "Click %1$s to open your Taler wallet!": [
         ""
       ],
       "Confirm Withdrawal": [
@@ -165,6 +186,27 @@ strings['de'] = {
         ""
       ],
       "A this point, a %1$s bank would ask for an additional authentication proof (PIN/TAN, one time password, ..), instead of a simple calculation.": [
+        ""
+      ],
+      "No withdrawal ID found.": [
+        ""
+      ],
+      "Could not confirm the withdrawal": [
+        ""
+      ],
+      "Withdrawal confirmation gave response error": [
+        ""
+      ],
+      "Withdrawal confirmed!": [
+        ""
+      ],
+      "Could not abort the withdrawal.": [
+        ""
+      ],
+      "Withdrawal abortion failed.": [
+        ""
+      ],
+      "Withdrawal aborted!": [
         ""
       ],
       "Abort": [
@@ -225,6 +267,15 @@ strings['de'] = {
         ""
       ],
       "Repeat Password:": [
+        ""
+      ],
+      "Registration failed, please report": [
+        ""
+      ],
+      "That username is already taken": [
+        ""
+      ],
+      "New registration gave response error": [
         ""
       ],
       "Bank menu": [
@@ -348,11 +399,32 @@ strings['en'] = {
       "Use wire-transfer form?": [
         ""
       ],
+      "No credentials found.": [
+        ""
+      ],
+      "Could not create the wire transfer": [
+        ""
+      ],
+      "Transfer creation gave response error": [
+        ""
+      ],
+      "Wire transfer created!": [
+        ""
+      ],
       "Amount to withdraw:": [
         "Amount to withdraw"
       ],
       "Withdraw": [
         "Confirm withdrawal"
+      ],
+      "No credentials given.": [
+        ""
+      ],
+      "Could not create withdrawal operation": [
+        ""
+      ],
+      "Withdrawal creation gave response error": [
+        ""
       ],
       "Obtain digital cash": [
         ""
@@ -378,7 +450,7 @@ strings['en'] = {
       "Use this QR code to withdraw to your mobile wallet:": [
         ""
       ],
-      "this link": [
+      "Click %1$s to open your Taler wallet!": [
         ""
       ],
       "Confirm Withdrawal": [
@@ -400,6 +472,27 @@ strings['en'] = {
         ""
       ],
       "A this point, a %1$s bank would ask for an additional authentication proof (PIN/TAN, one time password, ..), instead of a simple calculation.": [
+        ""
+      ],
+      "No withdrawal ID found.": [
+        ""
+      ],
+      "Could not confirm the withdrawal": [
+        "Confirm withdrawal"
+      ],
+      "Withdrawal confirmation gave response error": [
+        ""
+      ],
+      "Withdrawal confirmed!": [
+        ""
+      ],
+      "Could not abort the withdrawal.": [
+        "Close Taler withdrawal"
+      ],
+      "Withdrawal abortion failed.": [
+        ""
+      ],
+      "Withdrawal aborted!": [
         ""
       ],
       "Abort": [
@@ -460,6 +553,15 @@ strings['en'] = {
         ""
       ],
       "Repeat Password:": [
+        ""
+      ],
+      "Registration failed, please report": [
+        ""
+      ],
+      "That username is already taken": [
+        ""
+      ],
+      "New registration gave response error": [
         ""
       ],
       "Bank menu": [
@@ -583,11 +685,32 @@ strings['es'] = {
       "Use wire-transfer form?": [
         "Usar el formulario de transferencia bancaria?"
       ],
+      "No credentials found.": [
+        "Se dieron las credenciales incorrectas."
+      ],
+      "Could not create the wire transfer": [
+        "No se pudo create la transferencia bancaria"
+      ],
+      "Transfer creation gave response error": [
+        "La creación de la transferencia dió una respuesta erronea"
+      ],
+      "Wire transfer created!": [
+        "Transferencia bancaria creada!"
+      ],
       "Amount to withdraw:": [
         "Monto a retirar:"
       ],
       "Withdraw": [
         "Retirar"
+      ],
+      "No credentials given.": [
+        "Se dieron las credenciales incorrectas."
+      ],
+      "Could not create withdrawal operation": [
+        "No se pude create la operación de retiro"
+      ],
+      "Withdrawal creation gave response error": [
+        "La creación de retiro dió una respuesta errónea"
       ],
       "Obtain digital cash": [
         "Obtener dinero digital"
@@ -613,8 +736,8 @@ strings['es'] = {
       "Use this QR code to withdraw to your mobile wallet:": [
         "Usar el código QR para retirar a tu cartera móvil:"
       ],
-      "this link": [
-        "este link"
+      "Click %1$s to open your Taler wallet!": [
+        "Click %1$s para abrir una cartera Taler!"
       ],
       "Confirm Withdrawal": [
         "Confirmar retirada"
@@ -636,6 +759,27 @@ strings['es'] = {
       ],
       "A this point, a %1$s bank would ask for an additional authentication proof (PIN/TAN, one time password, ..), instead of a simple calculation.": [
         "En este punto, un banco %1$s preguntaría por una prueba adicional de autenticación (PIN/TAN, password de un solo uso, ....), en vez de un simple cálculo."
+      ],
+      "No withdrawal ID found.": [
+        "No ID de retiro encontrado."
+      ],
+      "Could not confirm the withdrawal": [
+        "No se pudo confirmar la retirada"
+      ],
+      "Withdrawal confirmation gave response error": [
+        "La confirmación de retiro dió una respuesta errónea"
+      ],
+      "Withdrawal confirmed!": [
+        "El retiro fue confirmado!"
+      ],
+      "Could not abort the withdrawal.": [
+        "No se pudo cancelar el retiro."
+      ],
+      "Withdrawal abortion failed.": [
+        "La cancelación del retiro falló."
+      ],
+      "Withdrawal aborted!": [
+        "Este retiro fue cancelado!"
       ],
       "Abort": [
         "Cancelar"
@@ -696,6 +840,15 @@ strings['es'] = {
       ],
       "Repeat Password:": [
         "Repita la contraseña:"
+      ],
+      "Registration failed, please report": [
+        "El registro falló, por favor reportelo"
+      ],
+      "That username is already taken": [
+        "El nombre del usuario ya está tomado"
+      ],
+      "New registration gave response error": [
+        "Nuevo registro dió una respuesta errónea"
       ],
       "Bank menu": [
         "Menu del banco"
@@ -818,11 +971,32 @@ strings['it'] = {
       "Use wire-transfer form?": [
         "Chiudi il bonifico"
       ],
+      "No credentials found.": [
+        "Credenziali invalide."
+      ],
+      "Could not create the wire transfer": [
+        ""
+      ],
+      "Transfer creation gave response error": [
+        ""
+      ],
+      "Wire transfer created!": [
+        "Bonifico"
+      ],
       "Amount to withdraw:": [
         "Somma da ritirare"
       ],
       "Withdraw": [
         "Conferma il ritiro"
+      ],
+      "No credentials given.": [
+        "Credenziali invalide."
+      ],
+      "Could not create withdrawal operation": [
+        ""
+      ],
+      "Withdrawal creation gave response error": [
+        ""
       ],
       "Obtain digital cash": [
         ""
@@ -848,8 +1022,8 @@ strings['it'] = {
       "Use this QR code to withdraw to your mobile wallet:": [
         "Usa questo codice QR per ritirare contante nel tuo wallet:"
       ],
-      "this link": [
-        "questo link"
+      "Click %1$s to open your Taler wallet!": [
+        ""
       ],
       "Confirm Withdrawal": [
         "Conferma il ritiro"
@@ -871,6 +1045,27 @@ strings['it'] = {
       ],
       "A this point, a %1$s bank would ask for an additional authentication proof (PIN/TAN, one time password, ..), instead of a simple calculation.": [
         ""
+      ],
+      "No withdrawal ID found.": [
+        ""
+      ],
+      "Could not confirm the withdrawal": [
+        "Conferma il ritiro"
+      ],
+      "Withdrawal confirmation gave response error": [
+        ""
+      ],
+      "Withdrawal confirmed!": [
+        "Questo ritiro è stato annullato!"
+      ],
+      "Could not abort the withdrawal.": [
+        "Chiudi il ritiro Taler"
+      ],
+      "Withdrawal abortion failed.": [
+        "Questo ritiro è stato annullato!"
+      ],
+      "Withdrawal aborted!": [
+        "Questo ritiro è stato annullato!"
       ],
       "Abort": [
         "Annulla"
@@ -930,6 +1125,15 @@ strings['it'] = {
         "Accedi!"
       ],
       "Repeat Password:": [
+        ""
+      ],
+      "Registration failed, please report": [
+        "Registrazione"
+      ],
+      "That username is already taken": [
+        ""
+      ],
+      "New registration gave response error": [
         ""
       ],
       "Bank menu": [
