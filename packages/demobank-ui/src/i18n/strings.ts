@@ -584,10 +584,10 @@ strings['es'] = {
         ""
       ],
       "Amount to withdraw:": [
-        "Amount to withdraw"
+        ""
       ],
       "Withdraw": [
-        "Confirm withdrawal"
+        ""
       ],
       "Obtain digital cash": [
         ""
@@ -608,7 +608,7 @@ strings['es'] = {
         ""
       ],
       "Transfer to Taler Wallet": [
-        "Charge Taler wallet"
+        ""
       ],
       "Use this QR code to withdraw to your mobile wallet:": [
         ""
@@ -617,7 +617,7 @@ strings['es'] = {
         ""
       ],
       "Confirm Withdrawal": [
-        "Confirm withdrawal"
+        ""
       ],
       "Authorize withdrawal by solving challenge": [
         ""
@@ -707,16 +707,16 @@ strings['es'] = {
         ""
       ],
       "days": [
-        "days"
+        ""
       ],
       "hours": [
-        "hours"
+        ""
       ],
       "minutes": [
-        "minutes"
+        ""
       ],
       "seconds": [
-        "seconds"
+        ""
       ]
     }
   }
