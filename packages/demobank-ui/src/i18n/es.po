@@ -14,24 +14,26 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: taler@gnu.org\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-01-08 09:57+0100\n"
-"Last-Translator:  <translate@taler.net>\n"
-"Language-Team: English\n"
-"Language: en\n"
+"PO-Revision-Date: 2022-12-09 13:22+0000\n"
+"Last-Translator: Sebastian Marchano <sebasjm@gmail.com>\n"
+"Language-Team: Spanish <https://weblate.taler.net/projects/gnu-taler/"
+"taler-bank-spa/es/>\n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.13.1\n"
 
 #: src/pages/home/BankFrame.tsx:55
 #, c-format
 msgid "Logout"
-msgstr ""
+msgstr "Cierre de sesión"
 
 #: src/pages/home/BankFrame.tsx:73
 #, c-format
 msgid "Skip to main content"
-msgstr ""
+msgstr "Saltar el menú de navegación"
 
 #: src/pages/home/BankFrame.tsx:82
 #, c-format
@@ -40,221 +42,224 @@ msgid ""
 "work. In addition to using your own bank account, you can also see the "
 "transaction history of some %1$s."
 msgstr ""
+"Esta parte de la demostración muestra cómo funciona un banco que soporta "
+"Taler directamente. Además de usar tu propia cuenta de banco, también podrás "
+"ver el historial de transacciones de algunas %1$s."
 
 #: src/pages/home/BankFrame.tsx:94
 #, c-format
 msgid "Taler logo"
-msgstr ""
+msgstr "Logo Taler"
 
 #: src/pages/home/LoginForm.tsx:41
 #, c-format
 msgid "Missing username"
-msgstr ""
+msgstr "Falta nombre de usuario"
 
 #: src/pages/home/LoginForm.tsx:42
 #, c-format
 msgid "Missing password"
-msgstr ""
+msgstr "Falta contraseña"
 
 #: src/pages/home/LoginForm.tsx:49
 #, c-format
 msgid "Please login!"
-msgstr ""
+msgstr "Por favor inicia sesión!"
 
 #: src/pages/home/LoginForm.tsx:51
 #, c-format
 msgid "Username:"
-msgstr ""
+msgstr "Nombre de usuario:"
 
 #: src/pages/home/LoginForm.tsx:71
 #, c-format
 msgid "Password:"
-msgstr ""
+msgstr "Password:"
 
 #: src/pages/home/LoginForm.tsx:100
 #, c-format
 msgid "Login"
-msgstr ""
+msgstr "Iniciar sesión"
 
 #: src/pages/home/LoginForm.tsx:110
 #, c-format
 msgid "Register"
-msgstr ""
+msgstr "Registrarse"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:57
 #, c-format
 msgid "Missing IBAN"
-msgstr ""
+msgstr "Falta IBAN"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:59
 #, c-format
 msgid "IBAN should have just uppercased letters and numbers"
-msgstr ""
+msgstr "IBAN debería tener letras mayúsculas y números"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:61
 #, c-format
 msgid "Missing subject"
-msgstr ""
+msgstr "Falta asunto"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:63
 #, c-format
 msgid "Missing amount"
-msgstr ""
+msgstr "Falta monto"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:65
 #, c-format
 msgid "Amount is not valid"
-msgstr ""
+msgstr "Monto no válido"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:67
 #, c-format
 msgid "Should be greater than 0"
-msgstr ""
+msgstr "Debería ser mas grande que 0"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:76
 #, c-format
 msgid "Receiver IBAN:"
-msgstr ""
+msgstr "IBAN receptor:"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:99
 #, c-format
 msgid "Transfer subject:"
-msgstr ""
+msgstr "Asunto de transferencia:"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:120
 #, c-format
 msgid "Amount:"
-msgstr ""
+msgstr "Monto:"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:174
 #, c-format
 msgid "Field(s) missing."
-msgstr ""
+msgstr "Faltan campo(s)."
 
 #: src/pages/home/PaytoWireTransferForm.tsx:223
 #, c-format
 msgid "Want to try the raw payto://-format?"
-msgstr ""
+msgstr "Quieres probar el formato payto:// ?"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:231
 #, c-format
 msgid "Missing payto address"
-msgstr ""
+msgstr "Falta direccion payto"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:233
 #, c-format
 msgid "Payto does not follow the pattern"
-msgstr ""
+msgstr "Payto no sigue el patrón"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:239
 #, c-format
 msgid "Transfer money to account identified by payto:// URI:"
-msgstr ""
+msgstr "Transferir dinero a la cuenta identificada por la URI payto://:"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:242
 #, c-format
 msgid "payto URI:"
-msgstr ""
+msgstr "payto URI:"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:251
 #, c-format
 msgid "payto address"
-msgstr ""
+msgstr "direccion payto"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:275
 #, c-format
 msgid "Send"
-msgstr ""
+msgstr "Envíar"
 
 #: src/pages/home/PaytoWireTransferForm.tsx:309
 #, c-format
 msgid "Use wire-transfer form?"
-msgstr ""
+msgstr "Usar el formulario de transferencia bancaria?"
 
 #: src/pages/home/WalletWithdrawForm.tsx:47
 #, c-format
 msgid "Amount to withdraw:"
-msgstr ""
+msgstr "Monto a retirar:"
 
 #: src/pages/home/WalletWithdrawForm.tsx:81
 #, c-format
 msgid "Withdraw"
-msgstr ""
+msgstr "Retirar"
 
 #: src/pages/home/PaymentOptions.tsx:44
 #, c-format
 msgid "Obtain digital cash"
-msgstr ""
+msgstr "Obtener dinero digital"
 
 #: src/pages/home/PaymentOptions.tsx:52
 #, c-format
 msgid "Transfer to bank account"
-msgstr ""
+msgstr "Transferir a una cuenta bancaria"
 
 #: src/pages/home/Transactions.tsx:69
 #, c-format
 msgid "Date"
-msgstr ""
+msgstr "Fecha"
 
 #: src/pages/home/Transactions.tsx:70
 #, c-format
 msgid "Amount"
-msgstr ""
+msgstr "Monto"
 
 #: src/pages/home/Transactions.tsx:71
 #, c-format
 msgid "Counterpart"
-msgstr ""
+msgstr "Contraparte"
 
 #: src/pages/home/Transactions.tsx:72
 #, c-format
 msgid "Subject"
-msgstr ""
+msgstr "Asunto"
 
 #: src/pages/home/QrCodeSection.tsx:41
 #, c-format
 msgid "Transfer to Taler Wallet"
-msgstr ""
+msgstr "Transferir a una cartera Taler"
 
 #: src/pages/home/QrCodeSection.tsx:44
 #, c-format
 msgid "Use this QR code to withdraw to your mobile wallet:"
-msgstr ""
+msgstr "Usar el código QR para retirar a tu cartera móvil:"
 
 #: src/pages/home/QrCodeSection.tsx:48
 #, c-format
 msgid "this link"
-msgstr ""
+msgstr "este link"
 
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:44
 #, c-format
 msgid "Confirm Withdrawal"
-msgstr ""
+msgstr "Confirmar retirada"
 
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:49
 #, c-format
 msgid "Authorize withdrawal by solving challenge"
-msgstr ""
+msgstr "Autorizar retiro resolviendo una pregunta"
 
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:52
 #, c-format
 msgid "What is"
-msgstr ""
+msgstr "Cuanto es"
 
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:90
 #, c-format
 msgid "Answer is wrong."
-msgstr ""
+msgstr "La respuesta es incorrecta."
 
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:95
 #, c-format
 msgid "Confirm"
-msgstr ""
+msgstr "Confirmar"
 
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:108
 #, c-format
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:115
 #, c-format
@@ -262,138 +267,143 @@ msgid ""
 "A this point, a %1$s bank would ask for an additional authentication proof "
 "(PIN/TAN, one time password, ..), instead of a simple calculation."
 msgstr ""
+"En este punto, un banco %1$s preguntaría por una prueba adicional de "
+"autenticación (PIN/TAN, password de un solo uso, ....), en vez de un simple "
+"cálculo."
 
 #: src/pages/home/WithdrawalQRCode.tsx:54
 #, c-format
 msgid "Abort"
-msgstr ""
+msgstr "Cancelar"
 
 #: src/pages/home/WithdrawalQRCode.tsx:74
 #, c-format
 msgid "withdrawal (%1$s) was never (correctly) created at the bank..."
-msgstr ""
+msgstr "retiro (%1$s) nunca fue (correctamente) generado en el banco..."
 
 #: src/pages/home/WithdrawalQRCode.tsx:88
 #, c-format
 msgid "Waiting the bank to create the operation..."
-msgstr ""
+msgstr "Esperando que el banco genere la operación...."
 
 #: src/pages/home/WithdrawalQRCode.tsx:102
 #, c-format
 msgid "This withdrawal was aborted!"
-msgstr ""
+msgstr "Este retiro fue cancelado!"
 
 #: src/pages/home/AccountPage.tsx:40
 #, c-format
 msgid "Welcome to %1$s!"
-msgstr ""
+msgstr "Bienvenido a %1$s!"
 
 #: src/pages/home/AccountPage.tsx:133
 #, c-format
 msgid "Username or account label '%1$s' not found.  Won't login."
 msgstr ""
+"Nombre de usuario o etiqueta de cuenta '%1$s' no encontrada. No se iniciará "
+"sesión."
 
 #: src/pages/home/AccountPage.tsx:159
 #, c-format
 msgid "Wrong credentials given."
-msgstr ""
+msgstr "Se dieron las credenciales incorrectas."
 
 #: src/pages/home/AccountPage.tsx:169
 #, c-format
 msgid "Account information could not be retrieved."
-msgstr ""
+msgstr "La información de la cuenta no pudo ser accedida."
 
 #: src/pages/home/AccountPage.tsx:210
 #, c-format
 msgid "Welcome, %1$s !"
-msgstr ""
+msgstr "Bienvenido/a, %1$s!"
 
 #: src/pages/home/AccountPage.tsx:221
 #, c-format
 msgid "Bank account balance"
-msgstr ""
+msgstr "Balance de cuenta bancaria"
 
 #: src/pages/home/AccountPage.tsx:237
 #, c-format
 msgid "Payments"
-msgstr ""
+msgstr "Pagos"
 
 #: src/pages/home/AccountPage.tsx:243
 #, c-format
 msgid "Latest transactions:"
-msgstr ""
+msgstr "Últimas transacciones:"
 
 #: src/pages/home/PublicHistoriesPage.tsx:83
 #, c-format
 msgid "List of public accounts was not found."
-msgstr ""
+msgstr "La lista de cuentas públicas no fue encontrada."
 
 #: src/pages/home/PublicHistoriesPage.tsx:95
 #, c-format
 msgid "List of public accounts could not be retrieved."
-msgstr ""
+msgstr "La lista de cuentas públicas no pudo ser accedida."
 
 #: src/pages/home/PublicHistoriesPage.tsx:143
 #, c-format
 msgid "History of public accounts"
-msgstr ""
+msgstr "Historial de cuentas públicas"
 
 #: src/pages/home/RegistrationPage.tsx:36
 #, c-format
 msgid "Currently, the bank is not accepting new registrations!"
-msgstr ""
+msgstr "Actualmente, el banco no está aceptado nuevos registros!"
 
 #: src/pages/home/RegistrationPage.tsx:65
 #, c-format
 msgid "Use only letter and numbers starting with a lower case letter"
-msgstr ""
+msgstr "Solo use letras y números comenzando con una letra minúscula"
 
 #: src/pages/home/RegistrationPage.tsx:75
 #, c-format
 msgid "Password don't match"
-msgstr ""
+msgstr "La contraseña no coincide"
 
 #: src/pages/home/RegistrationPage.tsx:86
 #, c-format
 msgid "Please register!"
-msgstr ""
+msgstr "Por favor, registrese!"
 
 #: src/pages/home/RegistrationPage.tsx:123
 #, c-format
 msgid "Repeat Password:"
-msgstr ""
+msgstr "Repita la contraseña:"
 
 #: src/components/menu/SideBar.tsx:53
 #, c-format
 msgid "Bank menu"
-msgstr ""
+msgstr "Menu del banco"
 
 #: src/components/menu/SideBar.tsx:59
 #, c-format
 msgid "Select option1"
-msgstr ""
+msgstr "Seleccione opción 1"
 
 #: src/components/menu/SideBar.tsx:66
 #, c-format
 msgid "Select option2"
-msgstr ""
+msgstr "Seleccione opción 2"
 
 #: src/components/picker/DurationPicker.tsx:55
 #, c-format
 msgid "days"
-msgstr ""
+msgstr "días"
 
 #: src/components/picker/DurationPicker.tsx:65
 #, c-format
 msgid "hours"
-msgstr ""
+msgstr "horas"
 
 #: src/components/picker/DurationPicker.tsx:76
 #, c-format
 msgid "minutes"
-msgstr ""
+msgstr "minutos"
 
 #: src/components/picker/DurationPicker.tsx:87
 #, c-format
 msgid "seconds"
-msgstr ""
+msgstr "segundos"
