@@ -21,6 +21,26 @@ import * as ts from "typescript";
 import * as fs from "fs";
 import * as path from "path"
 
+const DEFAULT_PO_HEADER = `# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\\n"
+"Report-Msgid-Bugs-To: \\n"
+"POT-Creation-Date: 2016-11-23 00:00+0100\\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
+"Language-Team: LANGUAGE <LL@li.org>\\n"
+"Language: \\n"
+"MIME-Version: 1.0\\n"
+"Content-Type: text/plain; charset=UTF-8\\n"
+"Content-Transfer-Encoding: 8bit\\n"\n\n`
+
+
 function wordwrap(str: string, width: number = 80): string[] {
   var regex = ".{1," + width + "}(\\s|$)|\\S+(\\s|$)";
   return str.match(RegExp(regex, "g"));
@@ -417,28 +437,14 @@ export function potextract() {
       !prog.isSourceFileDefaultLibrary(x),
   );
 
-  // console.log(ownFiles.map((x) => x.fileName));
+  let header: string
+  try {
+    header = fs.readFileSync("src/i18n/poheader", "utf-8")
+  } catch (e) {
+    header = DEFAULT_PO_HEADER
+  }
 
-  const chunks = [];
-
-  chunks.push(`# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
-msgid ""
-msgstr ""
-"Project-Id-Version: PACKAGE VERSION\\n"
-"Report-Msgid-Bugs-To: \\n"
-"POT-Creation-Date: 2016-11-23 00:00+0100\\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
-"Language-Team: LANGUAGE <LL@li.org>\\n"
-"Language: \\n"
-"MIME-Version: 1.0\\n"
-"Content-Type: text/plain; charset=UTF-8\\n"
-"Content-Transfer-Encoding: 8bit\\n"\n\n`);
+  const chunks = [header];
 
   const knownMessageIds = new Set<string>();
 

@@ -24,6 +24,8 @@ import * as fs from "fs";
 import * as path from "path";
 import glob = require("glob");
 
+const DEFAULT_STRING_PRELUDE = "export const strings: any = {};\n\n"
+
 export function po2ts(): void {
   const files = glob.sync("src/i18n/*.po");
 
@@ -34,9 +36,14 @@ export function po2ts(): void {
 
   console.log(files);
 
-  const chunks: string[] = [
-    "export const strings: any = {};\n\n"
-  ];
+  let prelude: string;
+  try {
+    prelude = fs.readFileSync("src/i18n/strings-prelude", "utf-8")
+  } catch (e) {
+    prelude = DEFAULT_STRING_PRELUDE
+  }
+
+  const chunks = [prelude];
 
   for (const filename of files) {
     const m = filename.match(/([a-zA-Z0-9-_]+).po/);
