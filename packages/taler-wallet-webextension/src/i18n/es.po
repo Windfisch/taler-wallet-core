@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-10-23 20:20+0000\n"
+"PO-Revision-Date: 2022-12-09 13:22+0000\n"
 "Last-Translator: Sebastian Marchano <sebasjm@gmail.com>\n"
 "Language-Team: Spanish <https://weblate.taler.net/projects/gnu-taler/"
 "webextensions/es/>\n"
@@ -330,7 +330,7 @@ msgstr "Resumen"
 #: src/components/ShowFullContractTermPopup.tsx:195
 #, c-format
 msgid "Amount"
-msgstr "Cantidad"
+msgstr "Monto"
 
 #: src/components/ShowFullContractTermPopup.tsx:203
 #, c-format
@@ -564,7 +564,7 @@ msgstr "Esta transacción no está completada"
 #: src/wallet/Transaction.tsx:209
 #, c-format
 msgid "Send"
-msgstr "Enviar"
+msgstr "Envíar"
 
 #: src/wallet/Transaction.tsx:216
 #, c-format
