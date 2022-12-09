@@ -1,258 +1,401 @@
-#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:55
-#, c-format
-msgid "days"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:65
-#, c-format
-msgid "hours"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:76
-#, c-format
-msgid "minutes"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:87
-#, c-format
-msgid "seconds"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:734
-#, c-format
-msgid "Clear"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:761
-#, c-format
-msgid "Logout"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:782
-#, c-format
-msgid "Demo Bank"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:837
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:840
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1189
-#, c-format
-msgid "Go back"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:845
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:906
-#, c-format
-msgid "Wire transfer"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:846
-#, c-format
-msgid "Transfer money to another account of this bank:"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:897
-#, c-format
-msgid "Want to try the raw payto://-format?"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:907
-#, c-format
-msgid "Transfer money via the Payto system:"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:916
-#, c-format
-msgid "payto address"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:926
-#, c-format
-msgid "Confirm"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:956
-#, c-format
-msgid "Confirm Withdrawal"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1026
-#, c-format
-msgid "Waiting the bank to create the operation..."
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1044
-#, c-format
-msgid "This withdrawal was aborted!"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1051
-#, c-format
-msgid "Withdraw to a Taler Wallet"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1052
-#, c-format
-msgid "You can use this QR code to withdraw to your mobile wallet:"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1054
-#, c-format
-msgid "this link"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1060
-#, c-format
-msgid "Abort"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1084
-#, c-format
-msgid "Start withdrawal"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1101
-#, c-format
-msgid "Withdraw Money into a Taler wallet"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1105
-#, c-format
-msgid "Amount to withdraw"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1137
-#, c-format
-msgid "Please login!"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1169
-#, c-format
-msgid "Login"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1184
-#, c-format
-msgid "Register to the euFin bank!"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1194
-#, c-format
-msgid "Registration form"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1232
-#, c-format
-msgid "Register"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1272
-#, c-format
-msgid "Date"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1273
-#, c-format
-msgid "Amount"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1274
-#, c-format
-msgid "Counterpart"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1275
-#, c-format
-msgid "Subject"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1343
-#, c-format
-msgid "Username or account label '%1$s' not found.  Won't login."
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1365
-#, c-format
-msgid "Wrong credentials given."
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1374
-#, c-format
-msgid "Account information could not be retrieved."
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1394
-#, c-format
-msgid "Close wire transfer"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1412
-#, c-format
-msgid "Close Taler withdrawal"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1457
-#, c-format
-msgid "Bank account balance:"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1469
-#, c-format
-msgid "Latest transactions:"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1474
-#, c-format
-msgid "Transfer money manually"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1543
-#, c-format
-msgid "List of public accounts was not found."
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1552
-#, c-format
-msgid "List of public accounts could not be retrieved."
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1584
-#, c-format
-msgid "History of public accounts"
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1643
-#, c-format
-msgid "Page has a problem: logged in but backend state is lost."
-msgstr ""
-
-#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1667
-#, c-format
-msgid "Welcome to the euFin bank!"
-msgstr ""
-
-#  This file is part of GNU Taler
-#  (C) 2021 Taler Systems S.A.
-#  GNU Taler is free software; you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation; either version 3, or (at your option) any later version.
-#  GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
-#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-#  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-#  You should have received a copy of the GNU General Public License along with
-#  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+# This file is part of GNU Taler
+# (C) 2022 Taler Systems S.A.
+#
+# GNU Taler is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3, or (at your option) any later version.
+#
+# GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Taler Wallet\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-11-23 00:00+0100\n"
+"Project-Id-Version: Taler Bank\n"
+"Report-Msgid-Bugs-To: taler@gnu.org\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: src/pages/home/BankFrame.tsx:55
+#, c-format
+msgid "Logout"
+msgstr ""
+
+#: src/pages/home/BankFrame.tsx:73
+#, c-format
+msgid "Skip to main content"
+msgstr ""
+
+#: src/pages/home/BankFrame.tsx:82
+#, c-format
+msgid ""
+"This part of the demo shows how a bank that supports Taler directly would work. "
+"In addition to using your own bank account, you can also see the transaction "
+"history of some %1$s."
+msgstr ""
+
+#: src/pages/home/BankFrame.tsx:94
+#, c-format
+msgid "Taler logo"
+msgstr ""
+
+#: src/pages/home/LoginForm.tsx:41
+#, c-format
+msgid "Missing username"
+msgstr ""
+
+#: src/pages/home/LoginForm.tsx:42
+#, c-format
+msgid "Missing password"
+msgstr ""
+
+#: src/pages/home/LoginForm.tsx:49
+#, c-format
+msgid "Please login!"
+msgstr ""
+
+#: src/pages/home/LoginForm.tsx:51
+#, c-format
+msgid "Username:"
+msgstr ""
+
+#: src/pages/home/LoginForm.tsx:71
+#, c-format
+msgid "Password:"
+msgstr ""
+
+#: src/pages/home/LoginForm.tsx:100
+#, c-format
+msgid "Login"
+msgstr ""
+
+#: src/pages/home/LoginForm.tsx:110
+#, c-format
+msgid "Register"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:57
+#, c-format
+msgid "Missing IBAN"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:59
+#, c-format
+msgid "IBAN should have just uppercased letters and numbers"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:61
+#, c-format
+msgid "Missing subject"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:63
+#, c-format
+msgid "Missing amount"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:65
+#, c-format
+msgid "Amount is not valid"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:67
+#, c-format
+msgid "Should be greater than 0"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:76
+#, c-format
+msgid "Receiver IBAN:"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:99
+#, c-format
+msgid "Transfer subject:"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:120
+#, c-format
+msgid "Amount:"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:174
+#, c-format
+msgid "Field(s) missing."
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:223
+#, c-format
+msgid "Want to try the raw payto://-format?"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:231
+#, c-format
+msgid "Missing payto address"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:233
+#, c-format
+msgid "Payto does not follow the pattern"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:239
+#, c-format
+msgid "Transfer money to account identified by payto:// URI:"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:242
+#, c-format
+msgid "payto URI:"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:251
+#, c-format
+msgid "payto address"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:275
+#, c-format
+msgid "Send"
+msgstr ""
+
+#: src/pages/home/PaytoWireTransferForm.tsx:309
+#, c-format
+msgid "Use wire-transfer form?"
+msgstr ""
+
+#: src/pages/home/WalletWithdrawForm.tsx:47
+#, c-format
+msgid "Amount to withdraw:"
+msgstr ""
+
+#: src/pages/home/WalletWithdrawForm.tsx:81
+#, c-format
+msgid "Withdraw"
+msgstr ""
+
+#: src/pages/home/PaymentOptions.tsx:44
+#, c-format
+msgid "Obtain digital cash"
+msgstr ""
+
+#: src/pages/home/PaymentOptions.tsx:52
+#, c-format
+msgid "Transfer to bank account"
+msgstr ""
+
+#: src/pages/home/Transactions.tsx:69
+#, c-format
+msgid "Date"
+msgstr ""
+
+#: src/pages/home/Transactions.tsx:70
+#, c-format
+msgid "Amount"
+msgstr ""
+
+#: src/pages/home/Transactions.tsx:71
+#, c-format
+msgid "Counterpart"
+msgstr ""
+
+#: src/pages/home/Transactions.tsx:72
+#, c-format
+msgid "Subject"
+msgstr ""
+
+#: src/pages/home/QrCodeSection.tsx:41
+#, c-format
+msgid "Transfer to Taler Wallet"
+msgstr ""
+
+#: src/pages/home/QrCodeSection.tsx:44
+#, c-format
+msgid "Use this QR code to withdraw to your mobile wallet:"
+msgstr ""
+
+#: src/pages/home/QrCodeSection.tsx:48
+#, c-format
+msgid "this link"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:44
+#, c-format
+msgid "Confirm Withdrawal"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:49
+#, c-format
+msgid "Authorize withdrawal by solving challenge"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:52
+#, c-format
+msgid "What is"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:90
+#, c-format
+msgid "Answer is wrong."
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:95
+#, c-format
+msgid "Confirm"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:108
+#, c-format
+msgid "Cancel"
+msgstr ""
+
+#: src/pages/home/WithdrawalConfirmationQuestion.tsx:115
+#, c-format
+msgid ""
+"A this point, a %1$s bank would ask for an additional authentication proof "
+"(PIN/TAN, one time password, ..), instead of a simple calculation."
+msgstr ""
+
+#: src/pages/home/WithdrawalQRCode.tsx:54
+#, c-format
+msgid "Abort"
+msgstr ""
+
+#: src/pages/home/WithdrawalQRCode.tsx:74
+#, c-format
+msgid "withdrawal (%1$s) was never (correctly) created at the bank..."
+msgstr ""
+
+#: src/pages/home/WithdrawalQRCode.tsx:88
+#, c-format
+msgid "Waiting the bank to create the operation..."
+msgstr ""
+
+#: src/pages/home/WithdrawalQRCode.tsx:102
+#, c-format
+msgid "This withdrawal was aborted!"
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:40
+#, c-format
+msgid "Welcome to %1$s!"
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:133
+#, c-format
+msgid "Username or account label '%1$s' not found.  Won't login."
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:159
+#, c-format
+msgid "Wrong credentials given."
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:169
+#, c-format
+msgid "Account information could not be retrieved."
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:210
+#, c-format
+msgid "Welcome, %1$s !"
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:221
+#, c-format
+msgid "Bank account balance"
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:237
+#, c-format
+msgid "Payments"
+msgstr ""
+
+#: src/pages/home/AccountPage.tsx:243
+#, c-format
+msgid "Latest transactions:"
+msgstr ""
+
+#: src/pages/home/PublicHistoriesPage.tsx:83
+#, c-format
+msgid "List of public accounts was not found."
+msgstr ""
+
+#: src/pages/home/PublicHistoriesPage.tsx:95
+#, c-format
+msgid "List of public accounts could not be retrieved."
+msgstr ""
+
+#: src/pages/home/PublicHistoriesPage.tsx:143
+#, c-format
+msgid "History of public accounts"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:36
+#, c-format
+msgid "Currently, the bank is not accepting new registrations!"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:65
+#, c-format
+msgid "Use only letter and numbers starting with a lower case letter"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:75
+#, c-format
+msgid "Password don't match"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:86
+#, c-format
+msgid "Please register!"
+msgstr ""
+
+#: src/pages/home/RegistrationPage.tsx:123
+#, c-format
+msgid "Repeat Password:"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:53
+#, c-format
+msgid "Bank menu"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:59
+#, c-format
+msgid "Select option1"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:66
+#, c-format
+msgid "Select option2"
+msgstr ""
+
+#: src/components/picker/DurationPicker.tsx:55
+#, c-format
+msgid "days"
+msgstr ""
+
+#: src/components/picker/DurationPicker.tsx:65
+#, c-format
+msgid "hours"
+msgstr ""
+
+#: src/components/picker/DurationPicker.tsx:76
+#, c-format
+msgid "minutes"
+msgstr ""
+
+#: src/components/picker/DurationPicker.tsx:87
+#, c-format
+msgid "seconds"
+msgstr ""
+

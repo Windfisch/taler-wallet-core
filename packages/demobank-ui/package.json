@@ -7,6 +7,10 @@
     "build": "./build.mjs",
     "check": "tsc",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
+    "i18n:extract": "pogen extract",
+    "i18n:merge": "pogen merge",
+    "i18n:emit": "pogen emit",
+    "i18n": "pnpm i18n:extract && pnpm i18n:merge && pnpm i18n:emit",
     "pretty": "prettier --write src"
   },
   "dependencies": {
@@ -48,5 +52,8 @@
     "po2json": "^0.4.5",
     "sass": "1.56.1",
     "typescript": "^4.4.4"
+  },
+  "pogen": {
+    "domain": "bank"
   }
 }
