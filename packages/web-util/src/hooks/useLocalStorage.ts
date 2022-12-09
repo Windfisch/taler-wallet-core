@@ -85,9 +85,9 @@ export function useNotNullLocalStorage(
     const listener = buildListenerForKey(key, (newValue) => {
       setStoredValue(newValue ?? initialValue)
     })
-    window.localStorage.addEventListener('storage', listener)
+    window.addEventListener('storage', listener)
     return () => {
-      window.localStorage.removeEventListener('storage', listener)
+      window.removeEventListener('storage', listener)
     }
   })
 
