@@ -42,7 +42,7 @@ export function QrCodeSection({
       <article>
         <div class="qr-div">
           <p>{i18n.str`Use this QR code to withdraw to your mobile wallet:`}</p>
-          {QR({ text: talerWithdrawUri })}
+          <QR text={talerWithdrawUri} />
           <p>
             <i18n.Translate>
               Click{" "}
