@@ -152,7 +152,7 @@ async function confirmWithdrawalCall(
       ...prevState,
 
       error: {
-        title: i18n.str`"No credentials found.`,
+        title: i18n.str`No credentials found.`,
       },
     }));
     return;

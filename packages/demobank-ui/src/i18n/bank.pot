@@ -299,11 +299,6 @@ msgid ""
 "(PIN/TAN, one time password, ..), instead of a simple calculation."
 msgstr ""
 
-#: src/pages/home/WithdrawalConfirmationQuestion.tsx:155
-#, c-format
-msgid "\\"No credentials found."
-msgstr ""
-
 #: src/pages/home/WithdrawalConfirmationQuestion.tsx:166
 #, c-format
 msgid "No withdrawal ID found."
