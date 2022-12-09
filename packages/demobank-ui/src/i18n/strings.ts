@@ -493,230 +493,230 @@ strings['es'] = {
     "messages": {
       "": {
         "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": "en"
+        "plural_forms": "nplurals=2; plural=n != 1;",
+        "lang": "es"
       },
       "Logout": [
-        ""
+        "Cierre de sesión"
       ],
       "Skip to main content": [
-        ""
+        "Saltar el menú de navegación"
       ],
       "This part of the demo shows how a bank that supports Taler directly would work. In addition to using your own bank account, you can also see the transaction history of some %1$s.": [
-        ""
+        "Esta parte de la demostración muestra cómo funciona un banco que soporta Taler directamente. Además de usar tu propia cuenta de banco, también podrás ver el historial de transacciones de algunas %1$s."
       ],
       "Taler logo": [
-        ""
+        "Logo Taler"
       ],
       "Missing username": [
-        ""
+        "Falta nombre de usuario"
       ],
       "Missing password": [
-        ""
+        "Falta contraseña"
       ],
       "Please login!": [
-        ""
+        "Por favor inicia sesión!"
       ],
       "Username:": [
-        ""
+        "Nombre de usuario:"
       ],
       "Password:": [
-        ""
+        "Password:"
       ],
       "Login": [
-        ""
+        "Iniciar sesión"
       ],
       "Register": [
-        ""
+        "Registrarse"
       ],
       "Missing IBAN": [
-        ""
+        "Falta IBAN"
       ],
       "IBAN should have just uppercased letters and numbers": [
-        ""
+        "IBAN debería tener letras mayúsculas y números"
       ],
       "Missing subject": [
-        ""
+        "Falta asunto"
       ],
       "Missing amount": [
-        ""
+        "Falta monto"
       ],
       "Amount is not valid": [
-        ""
+        "Monto no válido"
       ],
       "Should be greater than 0": [
-        ""
+        "Debería ser mas grande que 0"
       ],
       "Receiver IBAN:": [
-        ""
+        "IBAN receptor:"
       ],
       "Transfer subject:": [
-        ""
+        "Asunto de transferencia:"
       ],
       "Amount:": [
-        ""
+        "Monto:"
       ],
       "Field(s) missing.": [
-        ""
+        "Faltan campo(s)."
       ],
       "Want to try the raw payto://-format?": [
-        ""
+        "Quieres probar el formato payto:// ?"
       ],
       "Missing payto address": [
-        ""
+        "Falta direccion payto"
       ],
       "Payto does not follow the pattern": [
-        ""
+        "Payto no sigue el patrón"
       ],
       "Transfer money to account identified by payto:// URI:": [
-        ""
+        "Transferir dinero a la cuenta identificada por la URI payto://:"
       ],
       "payto URI:": [
-        ""
+        "payto URI:"
       ],
       "payto address": [
-        ""
+        "direccion payto"
       ],
       "Send": [
-        ""
+        "Envíar"
       ],
       "Use wire-transfer form?": [
-        ""
+        "Usar el formulario de transferencia bancaria?"
       ],
       "Amount to withdraw:": [
-        ""
+        "Monto a retirar:"
       ],
       "Withdraw": [
-        ""
+        "Retirar"
       ],
       "Obtain digital cash": [
-        ""
+        "Obtener dinero digital"
       ],
       "Transfer to bank account": [
-        ""
+        "Transferir a una cuenta bancaria"
       ],
       "Date": [
-        ""
+        "Fecha"
       ],
       "Amount": [
-        ""
+        "Monto"
       ],
       "Counterpart": [
-        ""
+        "Contraparte"
       ],
       "Subject": [
-        ""
+        "Asunto"
       ],
       "Transfer to Taler Wallet": [
-        ""
+        "Transferir a una cartera Taler"
       ],
       "Use this QR code to withdraw to your mobile wallet:": [
-        ""
+        "Usar el código QR para retirar a tu cartera móvil:"
       ],
       "this link": [
-        ""
+        "este link"
       ],
       "Confirm Withdrawal": [
-        ""
+        "Confirmar retirada"
       ],
       "Authorize withdrawal by solving challenge": [
-        ""
+        "Autorizar retiro resolviendo una pregunta"
       ],
       "What is": [
-        ""
+        "Cuanto es"
       ],
       "Answer is wrong.": [
-        ""
+        "La respuesta es incorrecta."
       ],
       "Confirm": [
-        ""
+        "Confirmar"
       ],
       "Cancel": [
-        ""
+        "Cancelar"
       ],
       "A this point, a %1$s bank would ask for an additional authentication proof (PIN/TAN, one time password, ..), instead of a simple calculation.": [
-        ""
+        "En este punto, un banco %1$s preguntaría por una prueba adicional de autenticación (PIN/TAN, password de un solo uso, ....), en vez de un simple cálculo."
       ],
       "Abort": [
-        ""
+        "Cancelar"
       ],
       "withdrawal (%1$s) was never (correctly) created at the bank...": [
-        ""
+        "retiro (%1$s) nunca fue (correctamente) generado en el banco..."
       ],
       "Waiting the bank to create the operation...": [
-        ""
+        "Esperando que el banco genere la operación...."
       ],
       "This withdrawal was aborted!": [
-        ""
+        "Este retiro fue cancelado!"
       ],
       "Welcome to %1$s!": [
-        ""
+        "Bienvenido a %1$s!"
       ],
       "Username or account label '%1$s' not found.  Won't login.": [
-        ""
+        "Nombre de usuario o etiqueta de cuenta '%1$s' no encontrada. No se iniciará sesión."
       ],
       "Wrong credentials given.": [
-        ""
+        "Se dieron las credenciales incorrectas."
       ],
       "Account information could not be retrieved.": [
-        ""
+        "La información de la cuenta no pudo ser accedida."
       ],
       "Welcome, %1$s !": [
-        ""
+        "Bienvenido/a, %1$s!"
       ],
       "Bank account balance": [
-        ""
+        "Balance de cuenta bancaria"
       ],
       "Payments": [
-        ""
+        "Pagos"
       ],
       "Latest transactions:": [
-        ""
+        "Últimas transacciones:"
       ],
       "List of public accounts was not found.": [
-        ""
+        "La lista de cuentas públicas no fue encontrada."
       ],
       "List of public accounts could not be retrieved.": [
-        ""
+        "La lista de cuentas públicas no pudo ser accedida."
       ],
       "History of public accounts": [
-        ""
+        "Historial de cuentas públicas"
       ],
       "Currently, the bank is not accepting new registrations!": [
-        ""
+        "Actualmente, el banco no está aceptado nuevos registros!"
       ],
       "Use only letter and numbers starting with a lower case letter": [
-        ""
+        "Solo use letras y números comenzando con una letra minúscula"
       ],
       "Password don't match": [
-        ""
+        "La contraseña no coincide"
       ],
       "Please register!": [
-        ""
+        "Por favor, registrese!"
       ],
       "Repeat Password:": [
-        ""
+        "Repita la contraseña:"
       ],
       "Bank menu": [
-        ""
+        "Menu del banco"
       ],
       "Select option1": [
-        ""
+        "Seleccione opción 1"
       ],
       "Select option2": [
-        ""
+        "Seleccione opción 2"
       ],
       "days": [
-        ""
+        "días"
       ],
       "hours": [
-        ""
+        "horas"
       ],
       "minutes": [
-        ""
+        "minutos"
       ],
       "seconds": [
-        ""
+        "segundos"
       ]
     }
   }
