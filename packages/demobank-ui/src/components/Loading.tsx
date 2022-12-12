@@ -14,6 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export * as qr from "./QrCodeSection.stories.js";
-export * as po from "./PaymentOptions.stories.js";
-export * as ptf from "./PaytoWireTransferForm.stories.js";
+import { h, VNode } from "preact";
+
+export function Loading(): VNode {
+  return <div>loading...</div>;
+}

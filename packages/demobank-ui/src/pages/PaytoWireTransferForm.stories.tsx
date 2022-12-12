@@ -14,6 +14,20 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export * as qr from "./QrCodeSection.stories.js";
-export * as po from "./PaymentOptions.stories.js";
-export * as ptf from "./PaytoWireTransferForm.stories.js";
+/**
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
+
+import { PaytoWireTransferForm } from "./PaytoWireTransferForm.js";
+
+export default {
+  title: "PaytoWireTransferForm",
+};
+
+export const USD = {
+  component: PaytoWireTransferForm,
+  props: {
+    currency: "USD",
+  },
+};
