@@ -701,6 +701,7 @@ importers:
       esbuild: ^0.14.21
       express: ^4.18.2
       preact: 10.11.3
+      preact-render-to-string: ^5.2.6
       prettier: ^2.5.1
       rimraf: ^3.0.2
       tslib: ^2.4.0
@@ -716,6 +717,7 @@ importers:
       esbuild: 0.14.54
       express: 4.18.2
       preact: 10.11.3
+      preact-render-to-string: 5.2.6_preact@10.11.3
       prettier: 2.7.1
       rimraf: 3.0.2
       tslib: 2.4.1
