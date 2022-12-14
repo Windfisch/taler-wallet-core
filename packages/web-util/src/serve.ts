@@ -77,23 +77,26 @@ export async function serve(opts: {
 
       if (opts.onUpdate) {
         sendToAllClients({ type: "file-updated-start", data: { path } });
-        opts.onUpdate().then((result) => {
-          sendToAllClients({
-            type: "file-updated-done",
-            data: { path, result },
+        opts
+          .onUpdate()
+          .then((result) => {
+            sendToAllClients({
+              type: "file-updated-done",
+              data: { path, result },
+            });
+          })
+          .catch((error) => {
+            sendToAllClients({
+              type: "file-updated-failed",
+              data: { path, error },
+            });
           });
-        }).catch((error) => {
-          sendToAllClients({
-            type: "file-updated-failed",
-            data: { path, error },
-          });
-        });
       } else {
         sendToAllClients({ type: "file-change", data: { path } });
       }
     });
 
-    if (opts.onUpdate) opts.onUpdate()
+    if (opts.onUpdate) opts.onUpdate();
 
     app.get(PATHS.EXAMPLE, function (req: any, res: any) {
       res.set("Content-Type", "text/html");

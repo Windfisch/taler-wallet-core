@@ -1,2 +1,5 @@
-
-export { InternationalizationAPI, TranslationProvider, useTranslationContext } from "./translation.js";
+export {
+  InternationalizationAPI,
+  TranslationProvider,
+  useTranslationContext,
+} from "./translation.js";

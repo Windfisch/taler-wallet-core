@@ -19,7 +19,7 @@ import { ComponentChildren, createContext, h, VNode } from "preact";
 import { useContext, useEffect } from "preact/hooks";
 import { useLang } from "../hooks/index.js";
 
-export type InternationalizationAPI = typeof i18n
+export type InternationalizationAPI = typeof i18n;
 
 interface Type {
   lang: string;
@@ -54,7 +54,7 @@ interface Props {
   initial?: string;
   children: ComponentChildren;
   forceLang?: string;
-  source: Record<string, any>
+  source: Record<string, any>;
 }
 
 // Outmost UI wrapper.
@@ -62,7 +62,7 @@ export const TranslationProvider = ({
   initial,
   children,
   forceLang,
-  source
+  source,
 }: Props): VNode => {
   const [lang, changeLanguage, isSaved] = useLang(initial);
   useEffect(() => {

@@ -78,13 +78,13 @@ const buildConfigNode = {
 
 const buildConfigBrowser = {
   ...buildConfigBase,
-  entryPoints: ["src/index.browser.ts", "src/live-reload.ts", 'src/stories.tsx'],
+  entryPoints: ["src/tests/axios.ts", "src/tests/swr.ts", "src/index.browser.ts", "src/live-reload.ts", 'src/stories.tsx'],
   outExtension: {
     '.js': '.mjs'
   },
   format: 'esm',
   platform: 'browser',
-  external: ["preact", "@gnu-taler/taler-util", "jed"],
+  external: ["preact", "@gnu-taler/taler-util", "jed","swr","axios"],
   jsxFactory: 'h',
   jsxFragment: 'Fragment',
 };
