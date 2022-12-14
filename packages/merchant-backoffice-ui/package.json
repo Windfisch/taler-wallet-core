@@ -104,7 +104,7 @@
     "script-ext-html-webpack-plugin": "^2.1.5",
     "sirv-cli": "^1.0.11",
     "typedoc": "^0.20.36",
-    "typescript": "4.4.4"
+    "typescript": "4.8.4"
   },
   "jest": {
     "preset": "jest-preset-preact",
