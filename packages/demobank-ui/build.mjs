@@ -44,7 +44,29 @@ const preactCompatPlugin = {
   },
 };
 
-const entryPoints = ["src/index.tsx", "src/stories.tsx"];
+function getFilesInDirectory(startPath, regex) {
+  if (!fs.existsSync(startPath)) {
+    return;
+  }
+  const files = fs.readdirSync(startPath);
+  const result = files.flatMap(file => {
+    const filename = path.join(startPath, file);
+
+    const stat = fs.lstatSync(filename);
+    if (stat.isDirectory()) {
+      return getFilesInDirectory(filename, regex);
+    }
+    else if (regex.test(filename)) {
+      return filename
+    }
+  }).filter(x => !!x)
+
+  return result
+}
+
+const allTestFiles = getFilesInDirectory(path.join(BASE, 'src'), /.test.ts$/)
+
+const entryPoints = ["src/index.tsx", "src/stories.tsx", ...allTestFiles];
 
 let GIT_ROOT = BASE;
 while (!fs.existsSync(path.join(GIT_ROOT, ".git")) && GIT_ROOT !== "/") {
@@ -128,6 +150,7 @@ export const buildConfig = {
   sourcemap: true,
   jsxFactory: "h",
   jsxFragment: "Fragment",
+  external: ["async_hooks"],
   define: {
     __VERSION__: `"${_package.version}"`,
     __GIT_HASH__: `"${GIT_HASH}"`,

@@ -14,15 +14,18 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Loading } from "../../components/Loading.js";
+import { Loading } from "../Loading.js";
 import { HookError, utils } from "@gnu-taler/web-util/lib/index.browser";
-//import { compose, StateViewMap } from "../../utils/index.js";
-//import { wxApi } from "../../wxApi.js";
+// import { compose, StateViewMap } from "../../utils/index.js";
+// import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { LoadingUriView, ReadyView } from "./views.js";
+import { AbsoluteTime, AmountJson } from "@gnu-taler/taler-util";
 
 export interface Props {
-  p: string;
+  pageNumber: number;
+  accountLabel: string;
+  balanceValue?: string;
 }
 
 export type State = State.Loading | State.LoadingUriError | State.Ready;
@@ -44,7 +47,16 @@ export namespace State {
   export interface Ready extends BaseInfo {
     status: "ready";
     error: undefined;
+    transactions: Transaction[];
   }
+}
+
+export interface Transaction {
+  negative: boolean;
+  counterpart: string;
+  when: AbsoluteTime;
+  amount: AmountJson;
+  subject: string;
 }
 
 const viewMapping: utils.StateViewMap<State> = {
@@ -53,7 +65,7 @@ const viewMapping: utils.StateViewMap<State> = {
   ready: ReadyView,
 };
 
-export const ComponentName = utils.compose(
+export const Transactions = utils.compose(
   (p: Props) => useComponentState(p),
   viewMapping,
 );

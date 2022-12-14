@@ -18,30 +18,28 @@
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
-import { strings } from "./i18n/strings.js";
 
-import * as pages from "./pages/index.stories.js";
-import * as components from "./components/index.examples.js";
+import { tests } from "@gnu-taler/web-util/lib/index.browser";
+import { ReadyView } from "./views.js";
 
-import { renderStories } from "@gnu-taler/web-util/lib/index.browser";
+export default {
+  title: "transaction list",
+};
 
-import "./scss/main.scss";
-
-function SortStories(a: any, b: any): number {
-  return (a?.order ?? 0) - (b?.order ?? 0);
-}
-
-function main(): void {
-  renderStories(
-    { pages, components },
+export const Ready = tests.createExample(ReadyView, {
+  transactions: [
     {
-      strings,
+      amount: {
+        currency: "USD",
+        fraction: 0,
+        value: 1,
+      },
+      counterpart: "ASD",
+      negative: false,
+      subject: "Some",
+      when: {
+        t_ms: new Date().getTime(),
+      },
     },
-  );
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", main);
-} else {
-  main();
-}
+  ],
+});

@@ -27,7 +27,7 @@ import { getIbanFromPayto, prepareHeaders } from "../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { LoginForm } from "./LoginForm.js";
 import { PaymentOptions } from "./PaymentOptions.js";
-import { Transactions } from "./Transactions.js";
+import { Transactions } from "../components/Transactions/index.js";
 import { WithdrawalQRCode } from "./WithdrawalQRCode.js";
 
 export function AccountPage(): VNode {

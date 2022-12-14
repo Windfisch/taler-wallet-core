@@ -24,7 +24,7 @@ import { PageStateType, usePageContext } from "../context/pageState.js";
 import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import { getBankBackendBaseUrl } from "../utils.js";
 import { BankFrame } from "./BankFrame.js";
-import { Transactions } from "./Transactions.js";
+import { Transactions } from "../components/Transactions/index.js";
 
 const logger = new Logger("PublicHistoriesPage");
 

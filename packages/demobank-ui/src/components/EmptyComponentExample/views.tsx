@@ -15,18 +15,16 @@
  */
 
 import { h, VNode } from "preact";
-import { LoadingError } from "../../components/LoadingError.js";
-import { useTranslationContext } from "../../context/translation.js";
+import { useTranslationContext } from "@gnu-taler/web-util/lib/index.browser";
 import { State } from "./index.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
 
   return (
-    <LoadingError
-      title={<i18n.Translate>Could not load</i18n.Translate>}
-      error={error}
-    />
+    <div>
+      <i18n.Translate>Could not load</i18n.Translate>
+    </div>
   );
 }
 

@@ -19,11 +19,11 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../../test-utils.js";
+import { tests } from "@gnu-taler/web-util/lib/index.browser";
 import { ReadyView } from "./views.js";
 
 export default {
   title: "example",
 };
 
-export const Ready = createExample(ReadyView, {});
+export const Ready = tests.createExample(ReadyView, {});
