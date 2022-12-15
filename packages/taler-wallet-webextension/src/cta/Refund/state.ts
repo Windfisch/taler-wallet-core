@@ -17,14 +17,14 @@
 import { Amounts, NotificationType } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
   { talerRefundUri, cancel, onSuccess }: Props,
-  api: typeof wxApi,
 ): State {
+  const api = useBackendContext()
   const [ignored, setIgnored] = useState(false);
 
   const info = useAsyncAsHook(async () => {

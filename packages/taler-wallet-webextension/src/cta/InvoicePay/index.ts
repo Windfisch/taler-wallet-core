@@ -18,13 +18,12 @@ import {
   AbsoluteTime,
   AmountJson,
   PreparePayResult,
-  TalerErrorDetail,
+  TalerErrorDetail
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { LoadingUriView, ReadyView } from "./views.js";
 
@@ -92,6 +91,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const InvoicePayPage = compose(
   "InvoicePayPage",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

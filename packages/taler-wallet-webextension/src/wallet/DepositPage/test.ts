@@ -23,14 +23,13 @@ import {
   Amounts,
   DepositGroupFees,
   parsePaytoUri,
-  stringifyPaytoUri,
+  stringifyPaytoUri
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
+import { tests } from "../../../../web-util/src/index.browser.js";
 import {
-  createWalletApiMock,
-  mountHook,
-  nullFunction,
+  createWalletApiMock, nullFunction
 } from "../../test-utils.js";
 
 import { useComponentState } from "./state.js";
@@ -50,7 +49,7 @@ const withSomeFee = (): DepositGroupFees => ({
 
 describe("DepositPage states", () => {
   it("should have status 'no-enough-balance' when balance is empty", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
@@ -72,27 +71,21 @@ describe("DepositPage states", () => {
       },
     );
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      ({ status }) => {
+        expect(status).equal("no-enough-balance");
+      },
+    ], TestingContext)
 
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("no-enough-balance");
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should have status 'no-accounts' when balance is not empty and accounts is empty", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
@@ -113,22 +106,17 @@ describe("DepositPage states", () => {
         accounts: [],
       },
     );
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
 
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      ({ status }) => {
+        expect(status).equal("no-accounts");
+      },
+    ], TestingContext)
 
-    expect(await waitForStateUpdate()).true;
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "no-accounts") expect.fail();
-      // expect(r.cancelHandler.onClick).not.undefined;
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -146,7 +134,7 @@ describe("DepositPage states", () => {
   };
 
   it("should have status 'ready' but unable to deposit ", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
@@ -173,37 +161,29 @@ describe("DepositPage states", () => {
       withoutFee(),
     );
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        expect(state.cancelHandler.onClick).not.undefined;
+        expect(state.currency).eq(currency);
+        expect(state.account.value).eq(stringifyPaytoUri(ibanPayto.uri));
+        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+        expect(state.depositHandler.onClick).undefined;
+      },
+    ], TestingContext)
 
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
-
-    expect(await waitForStateUpdate()).true;
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(stringifyPaytoUri(ibanPayto.uri));
-      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-      expect(r.depositHandler.onClick).undefined;
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should not be able to deposit more than the balance ", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
@@ -235,134 +215,45 @@ describe("DepositPage states", () => {
       undefined,
       withoutFee(),
     );
-    handler.addWalletCallResponse(
-      WalletApiOperation.GetFeeForDeposit,
-      undefined,
-      withoutFee(),
-    );
-    handler.addWalletCallResponse(
-      WalletApiOperation.GetFeeForDeposit,
-      undefined,
-      withoutFee(),
-    );
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
-
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
-
-    expect(await waitForStateUpdate()).true;
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
-
-    expect(await waitForStateUpdate()).true;
     const accountSelected = stringifyPaytoUri(ibanPayto.uri);
 
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
-      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-      expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-      expect(r.account.onChange).not.undefined;
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        expect(state.cancelHandler.onClick).not.undefined;
+        expect(state.currency).eq(currency);
+        expect(state.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
+        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+        expect(state.depositHandler.onClick).undefined;
+        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+        expect(state.account.onChange).not.undefined;
 
-      r.account.onChange!(accountSelected);
-    }
+        state.account.onChange!(accountSelected);
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        expect(state.cancelHandler.onClick).not.undefined;
+        expect(state.currency).eq(currency);
+        expect(state.account.value).eq(accountSelected);
+        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+        expect(state.depositHandler.onClick).undefined;
+      },
+    ], TestingContext)
 
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-      expect(r.depositHandler.onClick).undefined;
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
-  // it("should calculate the fee upon entering amount ", async () => {
-  //   const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-  //     mountHook(() =>
-  //       useComponentState(
-  //         { currency, onCancel: nullFunction, onSuccess: nullFunction },
-  //         {
-  //           getBalance: async () =>
-  //           ({
-  //             balances: [{ available: `${currency}:1` }],
-  //           } as Partial<BalancesResponse>),
-  //           listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-  //           getFeeForDeposit: withSomeFee,
-  //         } as Partial<typeof wxApi> as any,
-  //       ),
-  //     );
-
-  //   {
-  //     const { status } = getLastResultOrThrow();
-  //     expect(status).equal("loading");
-  //   }
-
-  //   await waitNextUpdate();
-
-  //   {
-  //     const r = getLastResultOrThrow();
-  //     if (r.status !== "ready") expect.fail();
-  //     expect(r.cancelHandler.onClick).not.undefined;
-  //     expect(r.currency).eq(currency);
-  //     expect(r.account.value).eq(accountSelected);
-  //     expect(r.amount.value).eq("0");
-  //     expect(r.depositHandler.onClick).undefined;
-  //     expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-
-  //     r.amount.onInput("10");
-  //   }
-
-  //   expect(await waitForStateUpdate()).true;
-
-  //   {
-  //     const r = pullLastResultOrThrow();
-  //     if (r.status !== "ready") expect.fail();
-  //     expect(r.cancelHandler.onClick).not.undefined;
-  //     expect(r.currency).eq(currency);
-  //     expect(r.account.value).eq(accountSelected);
-  //     expect(r.amount.value).eq("10");
-  //     expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-  //     expect(r.depositHandler.onClick).undefined;
-
-  //     r.amount.onInput("3");
-  //   }
-
-  //   expect(await waitForStateUpdate()).true;
-
-  //   {
-  //     const r = pullLastResultOrThrow();
-  //     if (r.status !== "ready") expect.fail();
-  //     expect(r.cancelHandler.onClick).not.undefined;
-  //     expect(r.currency).eq(currency);
-  //     expect(r.account.value).eq(accountSelected);
-  //     expect(r.amount.value).eq("3");
-  //     expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-  //     expect(r.depositHandler.onClick).not.undefined;
-  //   }
-
-  //   await assertNoPendingUpdate();
-  //   expect(handler.getCallingQueueState()).eq("empty")
-  // });
-
   it("should calculate the fee upon entering amount ", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
@@ -399,70 +290,54 @@ describe("DepositPage states", () => {
       withSomeFee(),
     );
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
-
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equal("loading");
-    }
-
-    expect(await waitForStateUpdate()).true;
     const accountSelected = stringifyPaytoUri(ibanPayto.uri);
 
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
-      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-      expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-      expect(r.account.onChange).not.undefined;
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        expect(state.cancelHandler.onClick).not.undefined;
+        expect(state.currency).eq(currency);
+        expect(state.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
+        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+        expect(state.depositHandler.onClick).undefined;
+        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+        expect(state.account.onChange).not.undefined;
 
-      r.account.onChange!(accountSelected);
-    }
+        state.account.onChange!(accountSelected);
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        expect(state.cancelHandler.onClick).not.undefined;
+        expect(state.currency).eq(currency);
+        expect(state.account.value).eq(accountSelected);
+        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+        expect(state.depositHandler.onClick).undefined;
+        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
 
-    expect(await waitForStateUpdate()).true;
+        expect(state.amount.onInput).not.undefined;
+        if (!state.amount.onInput) return;
+        state.amount.onInput(Amounts.parseOrThrow("EUR:10"));
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        expect(state.cancelHandler.onClick).not.undefined;
+        expect(state.currency).eq(currency);
+        expect(state.account.value).eq(accountSelected);
+        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:10"));
+        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+        expect(state.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
+        expect(state.depositHandler.onClick).not.undefined;
+      },
+    ], TestingContext)
 
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-      expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
-
-      expect(r.amount.onInput).not.undefined;
-      if (!r.amount.onInput) return;
-      r.amount.onInput(Amounts.parseOrThrow("EUR:10"));
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:10"));
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
-      expect(r.depositHandler.onClick).not.undefined;
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
+
   });
 });

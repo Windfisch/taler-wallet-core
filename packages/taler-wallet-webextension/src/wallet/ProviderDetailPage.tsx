@@ -28,10 +28,10 @@ import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { PaymentStatus, SmallLightText } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
-import { wxApi } from "../wxApi.js";
 
 interface Props {
   pid: string;
@@ -47,12 +47,10 @@ export function ProviderDetailPage({
   onWithdraw,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
+  const api = useBackendContext();
   async function getProviderInfo(): Promise<ProviderInfo | null> {
     //create a first list of backup info by currency
-    const status = await wxApi.wallet.call(
-      WalletApiOperation.GetBackupInfo,
-      {},
-    );
+    const status = await api.wallet.call(WalletApiOperation.GetBackupInfo, {});
 
     const providers = status.providers.filter(
       (p) => p.syncProviderBaseUrl === providerURL,
@@ -103,7 +101,7 @@ export function ProviderDetailPage({
     <ProviderView
       info={info}
       onSync={async () =>
-        wxApi.wallet
+        api.wallet
           .call(WalletApiOperation.RunBackupCycle, {
             providers: [providerURL],
           })
@@ -120,7 +118,7 @@ export function ProviderDetailPage({
         onWithdraw(info.paymentStatus.amount);
       }}
       onDelete={() =>
-        wxApi.wallet
+        api.wallet
           .call(WalletApiOperation.RemoveBackupProvider, {
             provider: providerURL,
           })

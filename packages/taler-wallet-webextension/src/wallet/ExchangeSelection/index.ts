@@ -18,14 +18,13 @@ import {
   DenomOperationMap,
   ExchangeFullDetails,
   ExchangeListItem,
-  FeeDescriptionPair,
+  FeeDescriptionPair
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
   ComparingView,
@@ -33,7 +32,7 @@ import {
   NoExchangesView,
   PrivacyContentView,
   ReadyView,
-  TosContentView,
+  TosContentView
 } from "./views.js";
 
 export interface Props {
@@ -106,6 +105,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const ExchangeSelectionPage = compose(
   "ExchangeSelectionPage",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

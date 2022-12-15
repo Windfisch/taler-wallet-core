@@ -16,22 +16,24 @@
 
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
+import { useBackendContext } from "../context/backend.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { platform } from "../platform/api.js";
-import { wxApi } from "../wxApi.js";
 
 export function useClipboardPermissions(): ToggleHandler {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<TalerError | undefined>();
+  const api = useBackendContext()
+
   const toggle = async (): Promise<void> => {
-    return handleClipboardPerm(enabled, setEnabled).catch((e) => {
+    return handleClipboardPerm(enabled, setEnabled, api.background).catch((e) => {
       setError(TalerError.fromException(e));
     });
   };
 
   useEffect(() => {
     async function getValue(): Promise<void> {
-      const res = await wxApi.background.containsHeaderListener();
+      const res = await api.background.containsHeaderListener();
       setEnabled(res.newValue);
     }
     getValue();
@@ -49,6 +51,7 @@ export function useClipboardPermissions(): ToggleHandler {
 async function handleClipboardPerm(
   isEnabled: boolean,
   onChange: (value: boolean) => void,
+  background: ReturnType<typeof useBackendContext>["background"],
 ): Promise<void> {
   if (!isEnabled) {
     // We set permissions here, since apparently FF wants this to be done
@@ -62,11 +65,10 @@ async function handleClipboardPerm(
       onChange(false);
       throw lastError;
     }
-    // const res = await wxApi.toggleHeaderListener(granted);
     onChange(granted);
   } else {
     try {
-      await wxApi.background
+      await background
         .toggleHeaderListener(false)
         .then((r) => onChange(r.newValue));
     } catch (e) {

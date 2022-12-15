@@ -60,11 +60,11 @@ import {
   WarningBox,
 } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { Pages } from "../NavigationBar.js";
-import { wxApi } from "../wxApi.js";
 
 interface Props {
   tid: string;
@@ -76,17 +76,17 @@ export function TransactionPage({
   goToWalletHistory,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
-
+  const api = useBackendContext();
   const state = useAsyncAsHook(
     () =>
-      wxApi.wallet.call(WalletApiOperation.GetTransactionById, {
+      api.wallet.call(WalletApiOperation.GetTransactionById, {
         transactionId,
       }),
     [transactionId],
   );
 
   useEffect(() =>
-    wxApi.listener.onUpdateNotification(
+    api.listener.onUpdateNotification(
       [NotificationType.WithdrawGroupFinished],
       state?.retry,
     ),
@@ -118,19 +118,19 @@ export function TransactionPage({
         null;
       }}
       onDelete={async () => {
-        await wxApi.wallet.call(WalletApiOperation.DeleteTransaction, {
+        await api.wallet.call(WalletApiOperation.DeleteTransaction, {
           transactionId,
         });
         goToWalletHistory(currency);
       }}
       onRetry={async () => {
-        await wxApi.wallet.call(WalletApiOperation.RetryTransaction, {
+        await api.wallet.call(WalletApiOperation.RetryTransaction, {
           transactionId,
         });
         goToWalletHistory(currency);
       }}
       onRefund={async (purchaseId) => {
-        await wxApi.wallet.call(WalletApiOperation.ApplyRefundFromPurchaseId, {
+        await api.wallet.call(WalletApiOperation.ApplyRefundFromPurchaseId, {
           purchaseId,
         });
       }}

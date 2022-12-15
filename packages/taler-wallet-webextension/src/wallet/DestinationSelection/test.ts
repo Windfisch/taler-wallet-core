@@ -23,11 +23,12 @@ import {
   Amounts,
   ExchangeEntryStatus,
   ExchangeListItem,
-  ExchangeTosStatus,
+  ExchangeTosStatus
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
-import { createWalletApiMock, mountHook } from "../../test-utils.js";
+import { tests } from "../../../../web-util/src/index.browser.js";
+import { createWalletApiMock, nullFunction } from "../../test-utils.js";
 import { useComponentState } from "./state.js";
 
 const exchangeArs: ExchangeListItem = {
@@ -42,7 +43,7 @@ const exchangeArs: ExchangeListItem = {
 
 describe("Destination selection states", () => {
   it("should select currency if no amount specified", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
 
     handler.addWalletCallResponse(
       WalletApiOperation.ListExchanges,
@@ -54,83 +55,65 @@ describe("Destination selection states", () => {
 
     const props = {
       type: "get" as const,
-      goToWalletManualWithdraw: () => {
-        return null;
-      },
-      goToWalletWalletInvoice: () => {
-        null;
-      },
+      goToWalletManualWithdraw: nullFunction,
+      goToWalletWalletInvoice: nullFunction,
     };
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
 
-    {
-      const state = pullLastResultOrThrow();
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equal("loading");
+      },
+      (state) => {
+        if (state.status !== "select-currency") expect.fail();
+        if (state.error) expect.fail();
+        expect(state.currencies).deep.eq({
+          ARS: "ARS",
+          "": "Select a currency",
+        });
 
-      if (state.status !== "loading") expect.fail();
-      if (state.error) expect.fail();
-    }
+        state.onCurrencySelected(exchangeArs.currency!);
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        if (state.error) expect.fail();
+        expect(state.goToBank.onClick).eq(undefined);
+        expect(state.goToWallet.onClick).eq(undefined);
 
-    expect(await waitForStateUpdate()).true;
+        expect(state.amountHandler.value).deep.eq(Amounts.parseOrThrow("ARS:0"));
+      },
+    ], TestingContext)
 
-    {
-      const state = pullLastResultOrThrow();
-
-      if (state.status !== "select-currency") expect.fail();
-      if (state.error) expect.fail();
-      expect(state.currencies).deep.eq({
-        ARS: "ARS",
-        "": "Select a currency",
-      });
-
-      state.onCurrencySelected(exchangeArs.currency!);
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const state = pullLastResultOrThrow();
-
-      if (state.status !== "ready") expect.fail();
-      if (state.error) expect.fail();
-      expect(state.goToBank.onClick).eq(undefined);
-      expect(state.goToWallet.onClick).eq(undefined);
-
-      expect(state.amountHandler.value).deep.eq(Amounts.parseOrThrow("ARS:0"));
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
+
   });
 
   it("should be possible to start with an amount specified in request params", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
 
     const props = {
       type: "get" as const,
-      goToWalletManualWithdraw: () => {
-        return null;
-      },
-      goToWalletWalletInvoice: () => {
-        null;
-      },
+      goToWalletManualWithdraw: nullFunction,
+      goToWalletWalletInvoice: nullFunction,
       amount: "ARS:2",
     };
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
 
-    {
-      const state = pullLastResultOrThrow();
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      // ({ status }) => {
+      //   expect(status).equal("loading");
+      // },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        if (state.error) expect.fail();
+        expect(state.goToBank.onClick).not.eq(undefined);
+        expect(state.goToWallet.onClick).not.eq(undefined);
 
-      if (state.status !== "ready") expect.fail();
-      if (state.error) expect.fail();
-      expect(state.goToBank.onClick).not.eq(undefined);
-      expect(state.goToWallet.onClick).not.eq(undefined);
+        expect(state.amountHandler.value).deep.eq(Amounts.parseOrThrow("ARS:2"));
+      },
+    ], TestingContext)
 
-      expect(state.amountHandler.value).deep.eq(Amounts.parseOrThrow("ARS:2"));
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
+
   });
 });

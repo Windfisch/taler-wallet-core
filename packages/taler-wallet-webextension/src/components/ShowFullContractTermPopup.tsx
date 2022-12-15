@@ -25,11 +25,11 @@ import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { Modal } from "../components/Modal.js";
 import { Time } from "../components/Time.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import { compose, StateViewMap } from "../utils/index.js";
-import { wxApi } from "../wxApi.js";
 import { Amount } from "./Amount.js";
 import { Link } from "./styled/index.js";
 
@@ -98,7 +98,8 @@ interface Props {
   proposalId: string;
 }
 
-function useComponentState({ proposalId }: Props, api: typeof wxApi): State {
+function useComponentState({ proposalId }: Props): State {
+  const api = useBackendContext();
   const [show, setShow] = useState(false);
   const hook = useAsyncAsHook(async () => {
     if (!show) return undefined;
@@ -139,7 +140,7 @@ const viewMapping: StateViewMap<State> = {
 
 export const ShowFullContractTermPopup = compose(
   "ShowFullContractTermPopup",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );
 

@@ -18,7 +18,6 @@ import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ToggleHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { TermsState } from "./utils.js";
 import {
@@ -26,7 +25,7 @@ import {
   LoadingUriView,
   ShowButtonsAcceptedTosView,
   ShowButtonsNonAcceptedTosView,
-  ShowTosContentView,
+  ShowTosContentView
 } from "./views.js";
 
 export interface Props {
@@ -89,6 +88,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const TermsOfService = compose(
   "TermsOfService",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

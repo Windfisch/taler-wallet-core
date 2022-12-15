@@ -15,22 +15,24 @@
  */
 
 import { useState, useEffect } from "preact/hooks";
-import { wxApi } from "../wxApi.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { useBackendContext } from "../context/backend.js";
 
 export function useWalletDevMode(): ToggleHandler {
   const [enabled, setEnabled] = useState<undefined | boolean>(undefined);
   const [error, setError] = useState<TalerError | undefined>();
+  const api = useBackendContext();
+
   const toggle = async (): Promise<void> => {
-    return handleOpen(enabled, setEnabled).catch((e) => {
+    return handleOpen(enabled, setEnabled, api).catch((e) => {
       setError(TalerError.fromException(e));
     });
   };
 
   useEffect(() => {
     async function getValue(): Promise<void> {
-      const res = await wxApi.wallet.call(WalletApiOperation.GetVersion, {});
+      const res = await api.wallet.call(WalletApiOperation.GetVersion, {});
       setEnabled(res.devMode);
     }
     getValue();
@@ -47,9 +49,10 @@ export function useWalletDevMode(): ToggleHandler {
 async function handleOpen(
   currentValue: undefined | boolean,
   onChange: (value: boolean) => void,
+  api: ReturnType<typeof useBackendContext>,
 ): Promise<void> {
   const nextValue = !currentValue;
-  await wxApi.wallet.call(WalletApiOperation.SetDevMode, {
+  await api.wallet.call(WalletApiOperation.SetDevMode, {
     devModeEnabled: nextValue,
   });
   onChange(nextValue);

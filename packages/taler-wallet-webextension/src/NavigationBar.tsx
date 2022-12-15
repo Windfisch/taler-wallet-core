@@ -24,20 +24,20 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
+import { JustInDevMode } from "./components/JustInDevMode.js";
 import {
   NavigationHeader,
   NavigationHeaderHolder,
   SvgIcon,
 } from "./components/styled/index.js";
+import { useBackendContext } from "./context/backend.js";
 import { useTranslationContext } from "./context/translation.js";
-import settingsIcon from "./svg/settings_black_24dp.svg";
-import qrIcon from "./svg/qr_code_24px.svg";
-import warningIcon from "./svg/warning_24px.svg";
 import { useAsyncAsHook } from "./hooks/useAsyncAsHook.js";
-import { wxApi } from "./wxApi.js";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { JustInDevMode } from "./components/JustInDevMode.js";
+import qrIcon from "./svg/qr_code_24px.svg";
+import settingsIcon from "./svg/settings_black_24dp.svg";
+import warningIcon from "./svg/warning_24px.svg";
 
 /**
  * List of pages used by the wallet
@@ -133,13 +133,8 @@ export const Pages = {
   ),
 };
 
-export function PopupNavBar({
-  path = "",
-}: {
-  path?: string;
-}): // api: typeof wxApi,
-VNode {
-  const api = wxApi; //FIXME: as parameter
+export function PopupNavBar({ path = "" }: { path?: string }): VNode {
+  const api = useBackendContext();
   const hook = useAsyncAsHook(async () => {
     return await api.wallet.call(
       WalletApiOperation.GetUserAttentionUnreadCount,
@@ -194,7 +189,7 @@ VNode {
 export function WalletNavBar({ path = "" }: { path?: string }): VNode {
   const { i18n } = useTranslationContext();
 
-  const api = wxApi; //FIXME: as parameter
+  const api = useBackendContext();
   const hook = useAsyncAsHook(async () => {
     return await api.wallet.call(
       WalletApiOperation.GetUserAttentionUnreadCount,

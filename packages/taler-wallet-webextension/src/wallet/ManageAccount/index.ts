@@ -20,10 +20,9 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   SelectFieldHandler,
-  TextFieldHandler,
+  TextFieldHandler
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { LoadingUriView, ReadyView } from "./views.js";
 
@@ -75,6 +74,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const ManageAccountPage = compose(
   "ManageAccountPage",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

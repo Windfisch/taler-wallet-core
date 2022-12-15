@@ -16,10 +16,11 @@
 
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
-import { wxApi } from "../wxApi.js";
+import { useBackendContext } from "../context/backend.js";
 
 export function useDiagnostics(): [WalletDiagnostics | undefined, boolean] {
   const [timedOut, setTimedOut] = useState(false);
+  const api = useBackendContext();
   const [diagnostics, setDiagnostics] = useState<WalletDiagnostics | undefined>(
     undefined,
   );
@@ -33,7 +34,7 @@ export function useDiagnostics(): [WalletDiagnostics | undefined, boolean] {
       }
     }, 1000);
     const doFetch = async (): Promise<void> => {
-      const d = await wxApi.background.getDiagnostics();
+      const d = await api.background.getDiagnostics();
       gotDiagnostics = true;
       setDiagnostics(d);
     };

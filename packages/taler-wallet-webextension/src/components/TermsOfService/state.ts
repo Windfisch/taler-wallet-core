@@ -16,15 +16,15 @@
 
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 import { buildTermsOfServiceState } from "./utils.js";
 
 export function useComponentState(
   { exchangeUrl, onChange }: Props,
-  api: typeof wxApi,
 ): State {
+  const api = useBackendContext()
   const readOnly = !onChange;
   const [showContent, setShowContent] = useState<boolean>(readOnly);
   const [errorAccepting, setErrorAccepting] = useState<Error | undefined>(

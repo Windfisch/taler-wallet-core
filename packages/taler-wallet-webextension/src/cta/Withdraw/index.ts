@@ -20,10 +20,9 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import {
   useComponentStateFromParams,
-  useComponentStateFromURI,
+  useComponentStateFromURI
 } from "./state.js";
 
 import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
@@ -96,11 +95,11 @@ const viewMapping: StateViewMap<State> = {
 
 export const WithdrawPageFromURI = compose(
   "WithdrawPageFromURI",
-  (p: PropsFromURI) => useComponentStateFromURI(p, wxApi),
+  (p: PropsFromURI) => useComponentStateFromURI(p),
   viewMapping,
 );
 export const WithdrawPageFromParams = compose(
   "WithdrawPageFromParams",
-  (p: PropsFromParams) => useComponentStateFromParams(p, wxApi),
+  (p: PropsFromParams) => useComponentStateFromParams(p),
   viewMapping,
 );

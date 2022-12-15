@@ -25,14 +25,14 @@ import {
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
   { talerPayPullUri, onClose, goToWalletManualWithdraw, onSuccess }: Props,
-  api: typeof wxApi,
 ): State {
+  const api = useBackendContext()
   const hook = useAsyncAsHook(async () => {
     const p2p = await api.wallet.call(WalletApiOperation.CheckPeerPullPayment, {
       talerUri: talerPayPullUri,

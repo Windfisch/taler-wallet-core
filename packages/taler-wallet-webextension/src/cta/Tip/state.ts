@@ -16,14 +16,14 @@
 
 import { Amounts } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
   { talerTipUri, onCancel, onSuccess }: Props,
-  api: typeof wxApi,
 ): State {
+  const api = useBackendContext()
   const tipInfo = useAsyncAsHook(async () => {
     if (!talerTipUri) throw Error("ERROR_NO-URI-FOR-TIP");
     const tip = await api.wallet.call(WalletApiOperation.PrepareTip, {

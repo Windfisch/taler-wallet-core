@@ -16,13 +16,13 @@
 
 import { parseRecoveryUri } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { wxApi } from "../../wxApi.js";
+import { useBackendContext } from "../../context/backend.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
   { talerRecoveryUri, onCancel, onSuccess }: Props,
-  api: typeof wxApi,
 ): State {
+  const api = useBackendContext()
   if (!talerRecoveryUri) {
     return {
       status: "loading-uri",
@@ -48,7 +48,7 @@ export function useComponentState(
   const recovery = info;
 
   async function recoverBackup(): Promise<void> {
-    await wxApi.wallet.call(WalletApiOperation.ImportBackupRecovery, {
+    await api.wallet.call(WalletApiOperation.ImportBackupRecovery, {
       recovery,
     });
     onSuccess();

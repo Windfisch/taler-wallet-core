@@ -23,17 +23,17 @@ import {
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { isFuture, parse } from "date-fns";
 import { useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
 import { RecursiveState } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
   { amount: amountStr, onClose, onSuccess }: Props,
-  api: typeof wxApi,
 ): RecursiveState<State> {
   const amount = Amounts.parseOrThrow(amountStr);
+  const api = useBackendContext()
 
   const hook = useAsyncAsHook(() =>
     api.wallet.call(WalletApiOperation.ListExchanges, {}),
@@ -158,8 +158,8 @@ export function useComponentState(
           subject === undefined
             ? undefined
             : !subject
-            ? "Can't be empty"
-            : undefined,
+              ? "Can't be empty"
+              : undefined,
         value: subject ?? "",
         onInput: async (e) => setSubject(e),
       },

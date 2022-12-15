@@ -16,22 +16,23 @@
 
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
+import { useBackendContext } from "../context/backend.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { platform } from "../platform/api.js";
-import { wxApi } from "../wxApi.js";
 
 export function useAutoOpenPermissions(): ToggleHandler {
+  const api = useBackendContext();
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<TalerError | undefined>();
   const toggle = async (): Promise<void> => {
-    return handleAutoOpenPerm(enabled, setEnabled).catch((e) => {
+    return handleAutoOpenPerm(enabled, setEnabled, api.background).catch((e) => {
       setError(TalerError.fromException(e));
     });
   };
 
   useEffect(() => {
     async function getValue(): Promise<void> {
-      const res = await wxApi.background.containsHeaderListener();
+      const res = await api.background.containsHeaderListener();
       setEnabled(res.newValue);
     }
     getValue();
@@ -48,6 +49,7 @@ export function useAutoOpenPermissions(): ToggleHandler {
 async function handleAutoOpenPerm(
   isEnabled: boolean,
   onChange: (value: boolean) => void,
+  background: ReturnType<typeof useBackendContext>["background"],
 ): Promise<void> {
   if (!isEnabled) {
     // We set permissions here, since apparently FF wants this to be done
@@ -59,11 +61,11 @@ async function handleAutoOpenPerm(
       onChange(false);
       throw lastError;
     }
-    const res = await wxApi.background.toggleHeaderListener(granted);
+    const res = await background.toggleHeaderListener(granted);
     onChange(res.newValue);
   } else {
     try {
-      await wxApi.background
+      await background
         .toggleHeaderListener(false)
         .then((r) => onChange(r.newValue));
     } catch (e) {

@@ -15,11 +15,12 @@
  */
 
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState({}: Props, api: typeof wxApi): State {
+export function useComponentState(p: Props): State {
+  const api = useBackendContext()
   const hook = useAsyncAsHook(async () => {
     return await api.wallet.call(
       WalletApiOperation.GetUserAttentionRequests,

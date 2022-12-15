@@ -246,7 +246,7 @@ interface HookTestResultError {
 export async function hookBehaveLikeThis<T extends object, PropsType>(
   hookFunction: (p: PropsType) => RecursiveState<T>,
   props: PropsType,
-  checks: Array<(state: T) => void>,
+  checks: Array<(state: Exclude<T, VoidFunction>) => void>,
   Context?: ({ children }: { children: any }) => VNode | null,
 ): Promise<HookTestResult> {
   const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =

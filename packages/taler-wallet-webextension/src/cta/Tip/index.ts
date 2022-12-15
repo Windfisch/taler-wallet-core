@@ -19,13 +19,12 @@ import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
   AcceptedView,
   IgnoredView,
   LoadingUriView,
-  ReadyView,
+  ReadyView
 } from "./views.js";
 
 export interface Props {
@@ -84,6 +83,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const TipPage = compose(
   "Tip",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

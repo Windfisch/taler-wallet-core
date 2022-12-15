@@ -16,7 +16,7 @@
 
 import { ProviderInfo, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
-import { wxApi } from "../wxApi.js";
+import { useBackendContext } from "../context/backend.js";
 
 export interface ProviderStatus {
   info?: ProviderInfo;
@@ -26,11 +26,11 @@ export interface ProviderStatus {
 
 export function useProviderStatus(url: string): ProviderStatus | undefined {
   const [status, setStatus] = useState<ProviderStatus | undefined>(undefined);
-
+  const api = useBackendContext();
   useEffect(() => {
     async function run(): Promise<void> {
       //create a first list of backup info by currency
-      const status = await wxApi.wallet.call(
+      const status = await api.wallet.call(
         WalletApiOperation.GetBackupInfo,
         {},
       );
@@ -42,7 +42,7 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
 
       async function sync(): Promise<void> {
         if (info) {
-          await wxApi.wallet.call(WalletApiOperation.RunBackupCycle, {
+          await api.wallet.call(WalletApiOperation.RunBackupCycle, {
             providers: [info.syncProviderBaseUrl],
           });
         }
@@ -50,7 +50,7 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
 
       async function remove(): Promise<void> {
         if (info) {
-          await wxApi.wallet.call(WalletApiOperation.RemoveBackupProvider, {
+          await api.wallet.call(WalletApiOperation.RemoveBackupProvider, {
             provider: info.syncProviderBaseUrl,
           });
         }

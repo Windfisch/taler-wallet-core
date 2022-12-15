@@ -17,15 +17,15 @@
 import { Amounts } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { assertUnreachable, RecursiveState } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { Contact, Props, State } from "./index.js";
 
 export function useComponentState(
   props: Props,
-  api: typeof wxApi,
 ): RecursiveState<State> {
+  const api = useBackendContext()
   const parsedInitialAmount = !props.amount
     ? undefined
     : Amounts.parse(props.amount);

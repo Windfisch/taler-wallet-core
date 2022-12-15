@@ -15,9 +15,7 @@
  */
 
 import {
-  AmountJson,
-  BackupBackupProviderTerms,
-  TalerErrorDetail,
+  TalerErrorDetail
 } from "@gnu-taler/taler-util";
 import { SyncTermsOfServiceResponse } from "@gnu-taler/taler-wallet-core";
 import { Loading } from "../../components/Loading.js";
@@ -25,15 +23,13 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   TextFieldHandler,
-  ToggleHandler,
+  ToggleHandler
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
-  LoadingUriView,
-  SelectProviderView,
-  ConfirmProviderView,
+  ConfirmProviderView, LoadingUriView,
+  SelectProviderView
 } from "./views.js";
 
 export interface Props {
@@ -90,6 +86,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const AddBackupProviderPage = compose(
   "AddBackupProvider",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

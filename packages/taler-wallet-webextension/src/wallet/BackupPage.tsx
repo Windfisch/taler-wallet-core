@@ -42,11 +42,11 @@ import {
   SmallText,
   WarningBox,
 } from "../components/styled/index.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { Pages } from "../NavigationBar.js";
-import { wxApi } from "../wxApi.js";
 
 interface Props {
   onAddProvider: () => Promise<void>;
@@ -107,8 +107,9 @@ export function ShowRecoveryInfo({
 
 export function BackupPage({ onAddProvider }: Props): VNode {
   const { i18n } = useTranslationContext();
+  const api = useBackendContext();
   const status = useAsyncAsHook(() =>
-    wxApi.wallet.call(WalletApiOperation.GetBackupInfo, {}),
+    api.wallet.call(WalletApiOperation.GetBackupInfo, {}),
   );
   const [recoveryInfo, setRecoveryInfo] = useState<string>("");
   if (!status) {
@@ -124,7 +125,7 @@ export function BackupPage({ onAddProvider }: Props): VNode {
   }
 
   async function getRecoveryInfo(): Promise<void> {
-    const r = await wxApi.wallet.call(
+    const r = await api.wallet.call(
       WalletApiOperation.ExportBackupRecovery,
       {},
     );
@@ -158,7 +159,7 @@ export function BackupPage({ onAddProvider }: Props): VNode {
       providers={providers}
       onAddProvider={onAddProvider}
       onSyncAll={async () =>
-        wxApi.wallet.call(WalletApiOperation.RunBackupCycle, {}).then()
+        api.wallet.call(WalletApiOperation.RunBackupCycle, {}).then()
       }
       onShowInfo={getRecoveryInfo}
     />

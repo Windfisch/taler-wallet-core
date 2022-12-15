@@ -22,7 +22,6 @@ import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
 import { NoExchangesView } from "../../wallet/ExchangeSelection/views.js";
-import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { LoadingUriView, ReadyView } from "./views.js";
 
@@ -78,6 +77,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const InvoiceCreatePage = compose(
   "InvoiceCreatePage",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

@@ -31,6 +31,7 @@ import {
   VNode,
 } from "preact";
 import { render as renderToString } from "preact-render-to-string";
+import { BackendProvider } from "./context/backend.js";
 import { BackgroundApiClient, wxApi } from "./wxApi.js";
 
 // When doing tests we want the requestAnimationFrame to be as fast as possible.
@@ -252,7 +253,7 @@ type Subscriptions = {
 
 export function createWalletApiMock(): {
   handler: MockHandler;
-  mock: typeof wxApi;
+  TestingContext: FunctionalComponent<{ children: ComponentChildren }>
 } {
   const calls = new Array<CallRecord>();
   const subscriptions: Subscriptions = {};
@@ -357,5 +358,14 @@ export function createWalletApiMock(): {
     },
   };
 
-  return { handler, mock };
+  function TestingContext({ children }: { children: ComponentChildren }): VNode {
+    return create(BackendProvider, {
+      wallet: mock.wallet,
+      background: mock.background,
+      listener: mock.listener,
+      children,
+    }, children)
+  }
+
+  return { handler, TestingContext };
 }

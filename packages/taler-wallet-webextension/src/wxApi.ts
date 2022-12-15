@@ -151,6 +151,14 @@ function onUpdateNotification(
   return platform.listenToWalletBackground(onNewMessage);
 }
 
+export type WxApiType = {
+  wallet: WalletCoreApiClient;
+  background: BackgroundApiClient;
+  listener: {
+    onUpdateNotification: typeof onUpdateNotification;
+  }
+}
+
 export const wxApi = {
   wallet: new WxWalletCoreApiClient(),
   background: new BackgroundApiClient(),

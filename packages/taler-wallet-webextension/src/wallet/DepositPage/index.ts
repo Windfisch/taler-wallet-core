@@ -20,11 +20,9 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   AmountFieldHandler,
   ButtonHandler,
-  SelectFieldHandler,
-  TextFieldHandler,
+  SelectFieldHandler
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { wxApi } from "../../wxApi.js";
 import { ManageAccountPage } from "../ManageAccount/index.js";
 import { useComponentState } from "./state.js";
 import {
@@ -32,7 +30,7 @@ import {
   LoadingErrorView,
   NoAccountToDepositView,
   NoEnoughBalanceView,
-  ReadyView,
+  ReadyView
 } from "./views.js";
 
 export interface Props {
@@ -119,6 +117,6 @@ const viewMapping: StateViewMap<State> = {
 
 export const DepositPage = compose(
   "DepositPage",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );

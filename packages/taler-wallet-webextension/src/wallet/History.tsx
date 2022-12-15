@@ -33,13 +33,13 @@ import {
 } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { TransactionItem } from "../components/TransactionItem.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { NoBalanceHelp } from "../popup/NoBalanceHelp.js";
 import DownloadIcon from "../svg/download_24px.svg";
 import UploadIcon from "../svg/upload_24px.svg";
-import { wxApi } from "../wxApi.js";
 
 interface Props {
   currency?: string;
@@ -52,13 +52,14 @@ export function HistoryPage({
   goToWalletDeposit,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
+  const api = useBackendContext();
   const state = useAsyncAsHook(async () => ({
-    b: await wxApi.wallet.call(WalletApiOperation.GetBalances, {}),
-    tx: await wxApi.wallet.call(WalletApiOperation.GetTransactions, {}),
+    b: await api.wallet.call(WalletApiOperation.GetBalances, {}),
+    tx: await api.wallet.call(WalletApiOperation.GetTransactions, {}),
   }));
 
   useEffect(() => {
-    return wxApi.listener.onUpdateNotification(
+    return api.listener.onUpdateNotification(
       [NotificationType.WithdrawGroupFinished],
       state?.retry,
     );

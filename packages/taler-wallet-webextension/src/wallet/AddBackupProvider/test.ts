@@ -19,12 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
+import { tests } from "../../../../web-util/src/index.browser.js";
 import {
-  createWalletApiMock,
-  mountHook,
-  nullFunction,
+  createWalletApiMock, nullFunction
 } from "../../test-utils.js";
 import { Props } from "./index.js";
 import { useComponentState } from "./state.js";
@@ -36,44 +34,21 @@ const props: Props = {
   onPaymentRequired: nullFunction,
 };
 describe("AddBackupProvider states", () => {
+
   it("should start in 'select-provider' state", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
 
-    // handler.addWalletCallResponse(
-    //   WalletApiOperation.ListKnownBankAccounts,
-    //   undefined,
-    //   {
-    //     accounts: [],
-    //   },
-    // );
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      (state) => {
+        expect(state.status).equal("select-provider");
+        if (state.status !== "select-provider") return;
+        expect(state.name.value).eq("");
+        expect(state.url.value).eq("");
+      },
+    ], TestingContext)
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
-
-    {
-      const state = pullLastResultOrThrow();
-      expect(state.status).equal("select-provider");
-      if (state.status !== "select-provider") return;
-      expect(state.name.value).eq("");
-      expect(state.url.value).eq("");
-    }
-
-    //FIXME: this should not make an extra update
-    /**
-     * this may be due to useUrlState because is using an effect over
-     * a dependency with a timeout
-     */
-    // NOTE: do not remove this comment, keeping as an example
-    // await waitForStateUpdate()
-    // {
-    //   const state = pullLastResultOrThrow();
-    //   expect(state.status).equal("select-provider");
-    //   if (state.status !== "select-provider") return;
-    //   expect(state.name.value).eq("")
-    //   expect(state.url.value).eq("")
-    // }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
+
   });
 });

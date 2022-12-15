@@ -22,11 +22,11 @@ import {
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, JSX, VNode } from "preact";
 import { useEffect } from "preact/hooks";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Avatar } from "../mui/Avatar.js";
 import { Typography } from "../mui/Typography.js";
-import { wxApi } from "../wxApi.js";
 import Banner from "./Banner.js";
 import { Time } from "./Time.js";
 
@@ -35,12 +35,13 @@ interface Props extends JSX.HTMLAttributes {
 }
 
 export function PendingTransactions({ goToTransaction }: Props): VNode {
+  const api = useBackendContext();
   const state = useAsyncAsHook(() =>
-    wxApi.wallet.call(WalletApiOperation.GetTransactions, {}),
+    api.wallet.call(WalletApiOperation.GetTransactions, {}),
   );
 
   useEffect(() => {
-    return wxApi.listener.onUpdateNotification(
+    return api.listener.onUpdateNotification(
       [NotificationType.WithdrawGroupFinished],
       state?.retry,
     );

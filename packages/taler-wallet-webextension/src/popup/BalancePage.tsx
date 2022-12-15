@@ -22,13 +22,13 @@ import { BalanceTable } from "../components/BalanceTable.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { MultiActionButton } from "../components/MultiActionButton.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import { compose, StateViewMap } from "../utils/index.js";
 import { AddNewActionView } from "../wallet/AddNewActionView.js";
-import { wxApi } from "../wxApi.js";
 import { NoBalanceHelp } from "./NoBalanceHelp.js";
 
 export interface Props {
@@ -67,10 +67,12 @@ export namespace State {
   }
 }
 
-function useComponentState(
-  { goToWalletDeposit, goToWalletHistory, goToWalletManualWithdraw }: Props,
-  api: typeof wxApi,
-): State {
+function useComponentState({
+  goToWalletDeposit,
+  goToWalletHistory,
+  goToWalletManualWithdraw,
+}: Props): State {
+  const api = useBackendContext();
   const [addingAction, setAddingAction] = useState(false);
   const state = useAsyncAsHook(() =>
     api.wallet.call(WalletApiOperation.GetBalances, {}),
@@ -128,7 +130,7 @@ const viewMapping: StateViewMap<State> = {
 
 export const BalancePage = compose(
   "BalancePage",
-  (p: Props) => useComponentState(p, wxApi),
+  (p: Props) => useComponentState(p),
   viewMapping,
 );
 

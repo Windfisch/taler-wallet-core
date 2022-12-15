@@ -20,16 +20,18 @@
  */
 
 import { Amounts } from "@gnu-taler/taler-util";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
-import { mountHook } from "../../test-utils.js";
 import { createWalletApiMock } from "../../test-utils.js";
 import { useComponentState } from "./state.js";
+import { tests } from "@gnu-taler/web-util/lib/index.browser";
+import { Props } from "./index.js";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 describe("Deposit CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { handler, mock } = createWalletApiMock();
-    const props = {
+    const { handler, TestingContext } = createWalletApiMock();
+
+    const props: Props = {
       talerDepositUri: undefined,
       amountStr: undefined,
       cancel: async () => {
@@ -39,32 +41,28 @@ describe("Deposit CTA states", () => {
         null;
       },
     };
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
 
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equals("loading");
-    }
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equals("loading");
+      },
+      ({ status, error }) => {
+        expect(status).equals("loading-uri");
 
-    expect(await waitForStateUpdate()).true;
+        if (!error) expect.fail();
+        if (!error.hasError) expect.fail();
+        if (error.operational) expect.fail();
+        expect(error.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
+      },
+    ], TestingContext)
 
-    {
-      const { status, error } = pullLastResultOrThrow();
-
-      expect(status).equals("loading-uri");
-
-      if (!error) expect.fail();
-      if (!error.hasError) expect.fail();
-      if (error.operational) expect.fail();
-      expect(error.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
-    }
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be ready after loading", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
+
     handler.addWalletCallResponse(
       WalletApiOperation.PrepareDeposit,
       undefined,
@@ -73,6 +71,7 @@ describe("Deposit CTA states", () => {
         totalDepositCost: "EUR:1.2",
       },
     );
+
     const props = {
       talerDepositUri: "payto://refund/asdasdas",
       amountStr: "EUR:1",
@@ -84,28 +83,21 @@ describe("Deposit CTA states", () => {
       },
     };
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentState(props, mock));
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
+      ({ status }) => {
+        expect(status).equals("loading");
+      },
+      (state) => {
+        if (state.status !== "ready") expect.fail();
+        if (state.error) expect.fail();
+        expect(state.confirm.onClick).not.undefined;
+        expect(state.cost).deep.eq(Amounts.parseOrThrow("EUR:1.2"));
+        expect(state.fee).deep.eq(Amounts.parseOrThrow("EUR:0.2"));
+        expect(state.effective).deep.eq(Amounts.parseOrThrow("EUR:1"));
+      },
+    ], TestingContext)
 
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equals("loading");
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const state = pullLastResultOrThrow();
-
-      if (state.status !== "ready") expect.fail();
-      if (state.error) expect.fail();
-      expect(state.confirm.onClick).not.undefined;
-      expect(state.cost).deep.eq(Amounts.parseOrThrow("EUR:1.2"));
-      expect(state.fee).deep.eq(Amounts.parseOrThrow("EUR:0.2"));
-      expect(state.effective).deep.eq(Amounts.parseOrThrow("EUR:1"));
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 });

@@ -17,17 +17,17 @@
 import { DenomOperationMap, FeeDescription } from "@gnu-taler/taler-util";
 import {
   createPairTimeline,
-  WalletApiOperation,
+  WalletApiOperation
 } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
+import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
   { onCancel, onSelection, list: exchanges, currentExchange }: Props,
-  api: typeof wxApi,
 ): State {
+  const api = useBackendContext()
   const initialValue = exchanges.findIndex(
     (e) => e.exchangeBaseUrl === currentExchange,
   );
@@ -52,14 +52,14 @@ export function useComponentState(
     const selected = !selectedExchange
       ? undefined
       : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, {
-          exchangeBaseUrl: selectedExchange.exchangeBaseUrl,
-        });
+        exchangeBaseUrl: selectedExchange.exchangeBaseUrl,
+      });
 
     const original = !initialExchange
       ? undefined
       : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, {
-          exchangeBaseUrl: initialExchange.exchangeBaseUrl,
-        });
+        exchangeBaseUrl: initialExchange.exchangeBaseUrl,
+      });
 
     return {
       exchanges,

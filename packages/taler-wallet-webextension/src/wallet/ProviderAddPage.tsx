@@ -31,10 +31,10 @@ import {
   SubTitle,
   Title,
 } from "../components/styled/index.js";
+import { useBackendContext } from "../context/backend.js";
 import { useTranslationContext } from "../context/translation.js";
 import { Button } from "../mui/Button.js";
 import { queryToSlashConfig } from "../utils/index.js";
-import { wxApi } from "../wxApi.js";
 
 interface Props {
   currency: string;
@@ -46,7 +46,7 @@ export function ProviderAddPage({ onBack }: Props): VNode {
     | { url: string; name: string; provider: BackupBackupProviderTerms }
     | undefined
   >(undefined);
-
+  const api = useBackendContext();
   if (!verifying) {
     return (
       <SetUrlView
@@ -70,7 +70,7 @@ export function ProviderAddPage({ onBack }: Props): VNode {
         setVerifying(undefined);
       }}
       onConfirm={() => {
-        return wxApi.wallet
+        return api.wallet
           .call(WalletApiOperation.AddBackupProvider, {
             backupProviderBaseUrl: verifying.url,
             name: verifying.name,

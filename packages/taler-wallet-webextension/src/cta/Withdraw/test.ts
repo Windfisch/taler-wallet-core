@@ -27,6 +27,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
+import { tests } from "../../../../web-util/src/index.browser.js";
 import { mountHook } from "../../test-utils.js";
 import { createWalletApiMock } from "../../test-utils.js";
 import { useComponentStateFromURI } from "./state.js";
@@ -61,53 +62,45 @@ const exchanges: ExchangeListItem[] = [
   } as Partial<ExchangeListItem> as ExchangeListItem,
 ];
 
+const nullFunction = async (): Promise<void> => {
+  null;
+}
+
 describe("Withdraw CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
+
     const props = {
       talerWithdrawUri: undefined,
-      cancel: async () => {
-        null;
-      },
-      onSuccess: async () => {
-        null;
-      },
+      cancel: nullFunction,
+      onSuccess: nullFunction,
     };
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentStateFromURI(props, mock));
 
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equals("loading");
-    }
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
+      ({ status }) => {
+        expect(status).equals("loading");
+      },
+      ({ status, error }) => {
+        if (status != "uri-error") expect.fail();
+        if (!error) expect.fail();
+        if (!error.hasError) expect.fail();
+        if (error.operational) expect.fail();
+        expect(error.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
+      },
+    ], TestingContext)
 
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const { status, error } = pullLastResultOrThrow();
-
-      if (status != "uri-error") expect.fail();
-      if (!error) expect.fail();
-      if (!error.hasError) expect.fail();
-      if (error.operational) expect.fail();
-      expect(error.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should tell the user that there is not known exchange", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = {
       talerWithdrawUri: "taler-withdraw://",
-      cancel: async () => {
-        null;
-      },
-      onSuccess: async () => {
-        null;
-      },
+      cancel: nullFunction,
+      onSuccess: nullFunction,
     };
+
     handler.addWalletCallResponse(
       WalletApiOperation.GetWithdrawalDetailsForUri,
       undefined,
@@ -117,39 +110,28 @@ describe("Withdraw CTA states", () => {
       },
     );
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentStateFromURI(props, mock));
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
+      ({ status }) => {
+        expect(status).equals("loading");
+      },
+      ({ status, error }) => {
+        expect(status).equals("no-exchange");
+        expect(error).undefined;
+      },
+    ], TestingContext)
 
-    {
-      const { status } = pullLastResultOrThrow();
-      expect(status).equals("loading", "1");
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const { status, error } = pullLastResultOrThrow();
-
-      expect(status).equals("no-exchange", "3");
-
-      expect(error).undefined;
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be able to withdraw if tos are ok", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = {
       talerWithdrawUri: "taler-withdraw://",
-      cancel: async () => {
-        null;
-      },
-      onSuccess: async () => {
-        null;
-      },
+      cancel: nullFunction,
+      onSuccess: nullFunction,
     };
+
     handler.addWalletCallResponse(
       WalletApiOperation.GetWithdrawalDetailsForUri,
       undefined,
@@ -171,54 +153,38 @@ describe("Withdraw CTA states", () => {
       },
     );
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentStateFromURI(props, mock));
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
+      ({ status }) => {
+        expect(status).equals("loading");
+      },
+      ({ status, error }) => {
+        expect(status).equals("loading");
+        expect(error).undefined;
+      },
+      (state) => {
+        expect(state.status).equals("success");
+        if (state.status !== "success") return;
 
-    {
-      const { status, error } = pullLastResultOrThrow();
-      expect(status).equals("loading");
-      expect(error).undefined;
-    }
+        expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+        expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+        expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-    expect(await waitForStateUpdate()).true;
+        expect(state.doWithdrawal.onClick).not.undefined;
+      },
+    ], TestingContext)
 
-    {
-      const { status, error } = pullLastResultOrThrow();
-
-      expect(status).equals("loading");
-
-      expect(error).undefined;
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const state = pullLastResultOrThrow();
-      expect(state.status).equals("success");
-      if (state.status !== "success") return;
-
-      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
-      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
-      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
-
-      expect(state.doWithdrawal.onClick).not.undefined;
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should accept the tos before withdraw", async () => {
-    const { handler, mock } = createWalletApiMock();
+    const { handler, TestingContext } = createWalletApiMock();
     const props = {
       talerWithdrawUri: "taler-withdraw://",
-      cancel: async () => {
-        null;
-      },
-      onSuccess: async () => {
-        null;
-      },
+      cancel: nullFunction,
+      onSuccess: nullFunction,
     };
+
     const exchangeWithNewTos = exchanges.map((e) => ({
       ...e,
       tosStatus: ExchangeTosStatus.New,
@@ -255,57 +221,39 @@ describe("Withdraw CTA states", () => {
       },
     );
 
-    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() => useComponentStateFromURI(props, mock));
+    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
+      ({ status }) => {
+        expect(status).equals("loading");
+      },
+      ({ status, error }) => {
+        expect(status).equals("loading");
+        expect(error).undefined;
+      },
+      (state) => {
+        expect(state.status).equals("success");
+        if (state.status !== "success") return;
 
-    {
-      const { status, error } = pullLastResultOrThrow();
-      expect(status).equals("loading");
-      expect(error).undefined;
-    }
+        expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+        expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+        expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-    expect(await waitForStateUpdate()).true;
+        expect(state.doWithdrawal.onClick).undefined;
 
-    {
-      const { status, error } = pullLastResultOrThrow();
+        state.onTosUpdate();
+      },
+      (state) => {
+        expect(state.status).equals("success");
+        if (state.status !== "success") return;
 
-      expect(status).equals("loading");
+        expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+        expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+        expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-      expect(error).undefined;
-    }
+        expect(state.doWithdrawal.onClick).not.undefined;
+      },
+    ], TestingContext)
 
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const state = pullLastResultOrThrow();
-      expect(state.status).equals("success");
-      if (state.status !== "success") return;
-
-      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
-      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
-      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
-
-      expect(state.doWithdrawal.onClick).undefined;
-
-      // updateAcceptedVersionToCurrentVersion();
-      state.onTosUpdate();
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const state = pullLastResultOrThrow();
-      expect(state.status).equals("success");
-      if (state.status !== "success") return;
-
-      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
-      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
-      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
-
-      expect(state.doWithdrawal.onClick).not.undefined;
-    }
-
-    await assertNoPendingUpdate();
+    expect(hookBehavior).deep.equal({ result: "ok" })
     expect(handler.getCallingQueueState()).eq("empty");
   });
 });
