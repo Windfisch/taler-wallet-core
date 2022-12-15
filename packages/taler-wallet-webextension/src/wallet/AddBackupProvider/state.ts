@@ -17,11 +17,11 @@
 import {
   canonicalizeBaseUrl,
   Codec,
-  TalerErrorDetail
+  TalerErrorDetail,
 } from "@gnu-taler/taler-util";
 import {
   codecForSyncTermsOfServiceResponse,
-  WalletApiOperation
+  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
@@ -106,47 +106,50 @@ function useUrlState<T>(
     constHref == undefined
       ? undefined
       : async () => {
-        const req = await fetch(constHref).catch((e) => {
-          return setState({
-            status: "network-error",
-            href: constHref,
+          const req = await fetch(constHref).catch((e) => {
+            return setState({
+              status: "network-error",
+              href: constHref,
+            });
           });
-        });
-        if (!req) return;
+          if (!req) return;
 
-        if (req.status >= 400 && req.status < 500) {
-          setState({
-            status: "client-error",
-            code: req.status,
-          });
-          return;
-        }
-        if (req.status > 500) {
-          setState({
-            status: "server-error",
-            code: req.status,
-          });
-          return;
-        }
+          if (req.status >= 400 && req.status < 500) {
+            setState({
+              status: "client-error",
+              code: req.status,
+            });
+            return;
+          }
+          if (req.status > 500) {
+            setState({
+              status: "server-error",
+              code: req.status,
+            });
+            return;
+          }
 
-        const json = await req.json();
-        try {
-          const result = codec.decode(json);
-          setState({ status: "ok", result });
-        } catch (e: any) {
-          setState({ status: "parsing-error", json });
-        }
-      },
+          const json = await req.json();
+          try {
+            const result = codec.decode(json);
+            setState({ status: "ok", result });
+          } catch (e: any) {
+            setState({ status: "parsing-error", json });
+          }
+        },
     [host, path],
   );
 
   return state;
 }
 
-export function useComponentState(
-  { currency, onBack, onComplete, onPaymentRequired }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  currency,
+  onBack,
+  onComplete,
+  onPaymentRequired,
+}: Props): State {
+  const api = useBackendContext();
   const [url, setHost] = useState<string | undefined>();
   const [name, setName] = useState<string | undefined>();
   const [tos, setTos] = useState(false);
@@ -223,8 +226,8 @@ export function useComponentState(
         !urlState || urlState.status !== "ok" || !name
           ? undefined
           : async () => {
-            setShowConfirm(true);
-          },
+              setShowConfirm(true);
+            },
     },
     urlOk: urlState?.status === "ok",
     url: {

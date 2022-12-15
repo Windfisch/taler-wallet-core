@@ -22,7 +22,7 @@ import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import {
   useComponentStateFromParams,
-  useComponentStateFromURI
+  useComponentStateFromURI,
 } from "./state.js";
 
 import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";

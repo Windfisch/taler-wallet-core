@@ -156,8 +156,8 @@ export type WxApiType = {
   background: BackgroundApiClient;
   listener: {
     onUpdateNotification: typeof onUpdateNotification;
-  }
-}
+  };
+};
 
 export const wxApi = {
   wallet: new WxWalletCoreApiClient(),

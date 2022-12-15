@@ -29,11 +29,13 @@ import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
 import { RecursiveState } from "../../utils/index.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { amount: amountStr, onClose, onSuccess }: Props,
-): RecursiveState<State> {
+export function useComponentState({
+  amount: amountStr,
+  onClose,
+  onSuccess,
+}: Props): RecursiveState<State> {
   const amount = Amounts.parseOrThrow(amountStr);
-  const api = useBackendContext()
+  const api = useBackendContext();
 
   const hook = useAsyncAsHook(() =>
     api.wallet.call(WalletApiOperation.ListExchanges, {}),
@@ -158,8 +160,8 @@ export function useComponentState(
           subject === undefined
             ? undefined
             : !subject
-              ? "Can't be empty"
-              : undefined,
+            ? "Can't be empty"
+            : undefined,
         value: subject ?? "",
         onInput: async (e) => setSubject(e),
       },

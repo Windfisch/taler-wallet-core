@@ -23,7 +23,7 @@ import {
   Amounts,
   ExchangeEntryStatus,
   ExchangeListItem,
-  ExchangeTosStatus
+  ExchangeTosStatus,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
@@ -59,33 +59,39 @@ describe("Destination selection states", () => {
       goToWalletWalletInvoice: nullFunction,
     };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      (state) => {
-        if (state.status !== "select-currency") expect.fail();
-        if (state.error) expect.fail();
-        expect(state.currencies).deep.eq({
-          ARS: "ARS",
-          "": "Select a currency",
-        });
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        (state) => {
+          if (state.status !== "select-currency") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.currencies).deep.eq({
+            ARS: "ARS",
+            "": "Select a currency",
+          });
 
-        state.onCurrencySelected(exchangeArs.currency!);
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        if (state.error) expect.fail();
-        expect(state.goToBank.onClick).eq(undefined);
-        expect(state.goToWallet.onClick).eq(undefined);
+          state.onCurrencySelected(exchangeArs.currency!);
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.goToBank.onClick).eq(undefined);
+          expect(state.goToWallet.onClick).eq(undefined);
 
-        expect(state.amountHandler.value).deep.eq(Amounts.parseOrThrow("ARS:0"));
-      },
-    ], TestingContext)
+          expect(state.amountHandler.value).deep.eq(
+            Amounts.parseOrThrow("ARS:0"),
+          );
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 
   it("should be possible to start with an amount specified in request params", async () => {
@@ -98,22 +104,28 @@ describe("Destination selection states", () => {
       amount: "ARS:2",
     };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      // ({ status }) => {
-      //   expect(status).equal("loading");
-      // },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        if (state.error) expect.fail();
-        expect(state.goToBank.onClick).not.eq(undefined);
-        expect(state.goToWallet.onClick).not.eq(undefined);
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        // ({ status }) => {
+        //   expect(status).equal("loading");
+        // },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.goToBank.onClick).not.eq(undefined);
+          expect(state.goToWallet.onClick).not.eq(undefined);
 
-        expect(state.amountHandler.value).deep.eq(Amounts.parseOrThrow("ARS:2"));
-      },
-    ], TestingContext)
+          expect(state.amountHandler.value).deep.eq(
+            Amounts.parseOrThrow("ARS:2"),
+          );
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 });

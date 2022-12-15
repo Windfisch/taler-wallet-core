@@ -23,14 +23,12 @@ import {
   Amounts,
   DepositGroupFees,
   parsePaytoUri,
-  stringifyPaytoUri
+  stringifyPaytoUri,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { tests } from "../../../../web-util/src/index.browser.js";
-import {
-  createWalletApiMock, nullFunction
-} from "../../test-utils.js";
+import { createWalletApiMock, nullFunction } from "../../test-utils.js";
 
 import { useComponentState } from "./state.js";
 
@@ -71,16 +69,21 @@ describe("DepositPage states", () => {
       },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      ({ status }) => {
-        expect(status).equal("no-enough-balance");
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        ({ status }) => {
+          expect(status).equal("no-enough-balance");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -107,16 +110,21 @@ describe("DepositPage states", () => {
       },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      ({ status }) => {
-        expect(status).equal("no-accounts");
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        ({ status }) => {
+          expect(status).equal("no-accounts");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -161,24 +169,29 @@ describe("DepositPage states", () => {
       withoutFee(),
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.cancelHandler.onClick).not.undefined;
-        expect(state.currency).eq(currency);
-        expect(state.account.value).eq(stringifyPaytoUri(ibanPayto.uri));
-        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-        expect(state.depositHandler.onClick).undefined;
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.cancelHandler.onClick).not.undefined;
+          expect(state.currency).eq(currency);
+          expect(state.account.value).eq(stringifyPaytoUri(ibanPayto.uri));
+          expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+          expect(state.depositHandler.onClick).undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -218,37 +231,42 @@ describe("DepositPage states", () => {
 
     const accountSelected = stringifyPaytoUri(ibanPayto.uri);
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.cancelHandler.onClick).not.undefined;
-        expect(state.currency).eq(currency);
-        expect(state.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
-        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-        expect(state.depositHandler.onClick).undefined;
-        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-        expect(state.account.onChange).not.undefined;
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.cancelHandler.onClick).not.undefined;
+          expect(state.currency).eq(currency);
+          expect(state.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
+          expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+          expect(state.depositHandler.onClick).undefined;
+          expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+          expect(state.account.onChange).not.undefined;
 
-        state.account.onChange!(accountSelected);
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.cancelHandler.onClick).not.undefined;
-        expect(state.currency).eq(currency);
-        expect(state.account.value).eq(accountSelected);
-        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-        expect(state.depositHandler.onClick).undefined;
-      },
-    ], TestingContext)
+          state.account.onChange!(accountSelected);
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.cancelHandler.onClick).not.undefined;
+          expect(state.currency).eq(currency);
+          expect(state.account.value).eq(accountSelected);
+          expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+          expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+          expect(state.depositHandler.onClick).undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -292,52 +310,58 @@ describe("DepositPage states", () => {
 
     const accountSelected = stringifyPaytoUri(ibanPayto.uri);
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      ({ status }) => {
-        expect(status).equal("loading");
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.cancelHandler.onClick).not.undefined;
-        expect(state.currency).eq(currency);
-        expect(state.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
-        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-        expect(state.depositHandler.onClick).undefined;
-        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-        expect(state.account.onChange).not.undefined;
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        ({ status }) => {
+          expect(status).equal("loading");
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.cancelHandler.onClick).not.undefined;
+          expect(state.currency).eq(currency);
+          expect(state.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
+          expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+          expect(state.depositHandler.onClick).undefined;
+          expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+          expect(state.account.onChange).not.undefined;
 
-        state.account.onChange!(accountSelected);
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.cancelHandler.onClick).not.undefined;
-        expect(state.currency).eq(currency);
-        expect(state.account.value).eq(accountSelected);
-        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
-        expect(state.depositHandler.onClick).undefined;
-        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+          state.account.onChange!(accountSelected);
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.cancelHandler.onClick).not.undefined;
+          expect(state.currency).eq(currency);
+          expect(state.account.value).eq(accountSelected);
+          expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
+          expect(state.depositHandler.onClick).undefined;
+          expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
 
-        expect(state.amount.onInput).not.undefined;
-        if (!state.amount.onInput) return;
-        state.amount.onInput(Amounts.parseOrThrow("EUR:10"));
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.cancelHandler.onClick).not.undefined;
-        expect(state.currency).eq(currency);
-        expect(state.account.value).eq(accountSelected);
-        expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:10"));
-        expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
-        expect(state.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
-        expect(state.depositHandler.onClick).not.undefined;
-      },
-    ], TestingContext)
+          expect(state.amount.onInput).not.undefined;
+          if (!state.amount.onInput) return;
+          state.amount.onInput(Amounts.parseOrThrow("EUR:10"));
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.cancelHandler.onClick).not.undefined;
+          expect(state.currency).eq(currency);
+          expect(state.account.value).eq(accountSelected);
+          expect(state.amount.value).deep.eq(Amounts.parseOrThrow("EUR:10"));
+          expect(state.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+          expect(state.totalToDeposit).deep.eq(
+            Amounts.parseOrThrow(`${currency}:7`),
+          );
+          expect(state.depositHandler.onClick).not.undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 });

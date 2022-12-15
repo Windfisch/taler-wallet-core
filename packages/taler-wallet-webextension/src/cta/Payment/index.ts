@@ -19,7 +19,7 @@ import {
   PreparePayResult,
   PreparePayResultAlreadyConfirmed,
   PreparePayResultInsufficientBalance,
-  PreparePayResultPaymentPossible
+  PreparePayResultPaymentPossible,
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";

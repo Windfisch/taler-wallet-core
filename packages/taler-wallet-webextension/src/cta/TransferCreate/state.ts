@@ -17,7 +17,7 @@
 import {
   Amounts,
   TalerErrorDetail,
-  TalerProtocolTimestamp
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { isFuture, parse } from "date-fns";
@@ -26,10 +26,12 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { amount: amountStr, onClose, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  amount: amountStr,
+  onClose,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   const amount = Amounts.parseOrThrow(amountStr);
 
   const [subject, setSubject] = useState<string | undefined>();
@@ -124,8 +126,8 @@ export function useComponentState(
         subject === undefined
           ? undefined
           : !subject
-            ? "Can't be empty"
-            : undefined,
+          ? "Can't be empty"
+          : undefined,
       value: subject ?? "",
       onInput: async (e) => setSubject(e),
     },

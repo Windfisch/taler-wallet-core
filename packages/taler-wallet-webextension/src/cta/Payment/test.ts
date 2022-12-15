@@ -45,22 +45,26 @@ describe("Payment CTA states", () => {
       onSuccess: nullFunction,
     };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      ({ status, error }) => {
-        expect(status).equals("loading-uri");
-        if (error === undefined) expect.fail();
-        expect(error.hasError).true;
-        expect(error.operational).false;
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        ({ status, error }) => {
+          expect(status).equals("loading-uri");
+          if (error === undefined) expect.fail();
+          expect(error.hasError).true;
+          expect(error.operational).false;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 
   it("should response with no balance", async () => {
@@ -86,22 +90,27 @@ describe("Payment CTA states", () => {
       { balances: [] },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "no-balance-for-currency") {
-          expect(state).eq({});
-          return;
-        }
-        expect(state.balance).undefined;
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "no-balance-for-currency") {
+            expect(state).eq({});
+            return;
+          }
+          expect(state.balance).undefined;
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -138,19 +147,24 @@ describe("Payment CTA states", () => {
       },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "no-enough-balance") expect.fail();
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:5"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "no-enough-balance") expect.fail();
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:5"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -187,25 +201,29 @@ describe("Payment CTA states", () => {
         ],
       },
     );
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") {
-          expect(state).eq({});
-          return;
-        }
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
-        expect(state.payHandler.onClick).not.undefined;
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") {
+            expect(state).eq({});
+            return;
+          }
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
+          expect(state.payHandler.onClick).not.undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 
   it("should be able to pay (with fee)", async () => {
@@ -241,20 +259,25 @@ describe("Payment CTA states", () => {
         ],
       },
     );
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
-        expect(state.payHandler.onClick).not.undefined;
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
+          expect(state.payHandler.onClick).not.undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -297,26 +320,30 @@ describe("Payment CTA states", () => {
       contractTerms: {},
     } as ConfirmPayResult);
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") {
-          expect(state).eq({});
-          return;
-        }
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
-        if (state.payHandler.onClick === undefined) expect.fail();
-        state.payHandler.onClick();
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") {
+            expect(state).eq({});
+            return;
+          }
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
+          if (state.payHandler.onClick === undefined) expect.fail();
+          state.payHandler.onClick();
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 
   it("should not stay in ready state after pay with error", async () => {
@@ -357,40 +384,44 @@ describe("Payment CTA states", () => {
       lastError: { code: 1 },
     } as ConfirmPayResult);
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
-        // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
-        if (state.payHandler.onClick === undefined) expect.fail();
-        state.payHandler.onClick();
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
-        // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
-        expect(state.payHandler.onClick).undefined;
-        if (state.payHandler.error === undefined) expect.fail();
-        //FIXME: error message here is bad
-        expect(state.payHandler.error.errorDetail.hint).eq(
-          "could not confirm payment",
-        );
-        expect(state.payHandler.error.errorDetail.payResult).deep.equal({
-          type: ConfirmPayResultType.Pending,
-          lastError: { code: 1 },
-        });
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
+          // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
+          if (state.payHandler.onClick === undefined) expect.fail();
+          state.payHandler.onClick();
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
+          // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
+          expect(state.payHandler.onClick).undefined;
+          if (state.payHandler.error === undefined) expect.fail();
+          //FIXME: error message here is bad
+          expect(state.payHandler.error.errorDetail.hint).eq(
+            "could not confirm payment",
+          );
+          expect(state.payHandler.error.errorDetail.payResult).deep.equal({
+            type: ConfirmPayResultType.Pending,
+            lastError: { code: 1 },
+          });
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 
   it("should update balance if a coins is withdraw", async () => {
@@ -455,30 +486,35 @@ describe("Payment CTA states", () => {
       },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail()
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:10"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
-        // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
-        expect(state.payHandler.onClick).not.undefined;
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:10"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
+          // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
+          expect(state.payHandler.onClick).not.undefined;
 
-        handler.notifyEventFromWallet(NotificationType.CoinWithdrawn);
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail()
-        expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
-        expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
-        // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
-        expect(state.payHandler.onClick).not.undefined;
-      },
-    ], TestingContext)
+          handler.notifyEventFromWallet(NotificationType.CoinWithdrawn);
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          expect(state.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
+          expect(state.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
+          // expect(r.totalFees).deep.equal(Amounts.parseOrThrow("USD:1"));
+          expect(state.payHandler.onClick).not.undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 });

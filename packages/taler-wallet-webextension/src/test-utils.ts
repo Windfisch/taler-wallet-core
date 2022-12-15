@@ -54,7 +54,7 @@ export function createExample<Props>(
 
   return {
     component: Render,
-    props: evaluatedProps
+    props: evaluatedProps,
   };
 }
 
@@ -74,7 +74,7 @@ export function createExampleWithCustomContext<Props, ContextProps>(
 
   return {
     component: WithContext,
-    props: evaluatedProps
+    props: evaluatedProps,
   };
 }
 
@@ -253,7 +253,7 @@ type Subscriptions = {
 
 export function createWalletApiMock(): {
   handler: MockHandler;
-  TestingContext: FunctionalComponent<{ children: ComponentChildren }>
+  TestingContext: FunctionalComponent<{ children: ComponentChildren }>;
 } {
   const calls = new Array<CallRecord>();
   const subscriptions: Subscriptions = {};
@@ -342,8 +342,8 @@ export function createWalletApiMock(): {
         callback: cb
           ? cb
           : () => {
-            null;
-          },
+              null;
+            },
       });
       return handler;
     },
@@ -358,13 +358,21 @@ export function createWalletApiMock(): {
     },
   };
 
-  function TestingContext({ children }: { children: ComponentChildren }): VNode {
-    return create(BackendProvider, {
-      wallet: mock.wallet,
-      background: mock.background,
-      listener: mock.listener,
+  function TestingContext({
+    children,
+  }: {
+    children: ComponentChildren;
+  }): VNode {
+    return create(
+      BackendProvider,
+      {
+        wallet: mock.wallet,
+        background: mock.background,
+        listener: mock.listener,
+        children,
+      },
       children,
-    }, children)
+    );
   }
 
   return { handler, TestingContext };

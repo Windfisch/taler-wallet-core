@@ -28,11 +28,14 @@ import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { talerPayUri, cancel, goToWalletManualWithdraw, onSuccess }: Props,
-): State {
+export function useComponentState({
+  talerPayUri,
+  cancel,
+  goToWalletManualWithdraw,
+  onSuccess,
+}: Props): State {
   const [payErrMsg, setPayErrMsg] = useState<TalerError | undefined>(undefined);
-  const api = useBackendContext()
+  const api = useBackendContext();
 
   const hook = useAsyncAsHook(async () => {
     if (!talerPayUri) throw Error("ERROR_NO-URI-FOR-PAYMENT");

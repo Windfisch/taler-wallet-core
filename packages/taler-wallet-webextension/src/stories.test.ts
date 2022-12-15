@@ -34,18 +34,21 @@ setupI18n("en", { en: {} });
 setupPlatform(chromeAPI);
 
 describe("All the examples:", () => {
-  const cms = parseGroupImport({ popup, wallet, cta, mui, components })
-  cms.forEach(group => {
+  const cms = parseGroupImport({ popup, wallet, cta, mui, components });
+  cms.forEach((group) => {
     describe(`Example for group "${group.title}:"`, () => {
-      group.list.forEach(component => {
+      group.list.forEach((component) => {
         describe(`Component ${component.name}:`, () => {
-          component.examples.forEach(example => {
+          component.examples.forEach((example) => {
             it(`should render example: ${example.name}`, () => {
-              renderNodeOrBrowser(example.render.component, example.render.props)
-            })
-          })
-        })
-      })
-    })
-  })
+              renderNodeOrBrowser(
+                example.render.component,
+                example.render.props,
+              );
+            });
+          });
+        });
+      });
+    });
+  });
 });

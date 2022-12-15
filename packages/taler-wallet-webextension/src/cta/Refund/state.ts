@@ -21,10 +21,12 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { talerRefundUri, cancel, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  talerRefundUri,
+  cancel,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   const [ignored, setIgnored] = useState(false);
 
   const info = useAsyncAsHook(async () => {

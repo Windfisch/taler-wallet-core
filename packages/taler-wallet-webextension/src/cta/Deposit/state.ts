@@ -20,10 +20,13 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { talerDepositUri, amountStr, cancel, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  talerDepositUri,
+  amountStr,
+  cancel,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   const info = useAsyncAsHook(async () => {
     if (!talerDepositUri) throw Error("ERROR_NO-URI-FOR-DEPOSIT");
     if (!amountStr) throw Error("ERROR_NO-AMOUNT-FOR-DEPOSIT");

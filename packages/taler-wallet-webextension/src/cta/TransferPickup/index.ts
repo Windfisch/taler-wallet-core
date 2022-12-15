@@ -17,7 +17,7 @@
 import {
   AbsoluteTime,
   AmountJson,
-  TalerErrorDetail
+  TalerErrorDetail,
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";

@@ -29,10 +29,13 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { talerPayPullUri, onClose, goToWalletManualWithdraw, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  talerPayPullUri,
+  onClose,
+  goToWalletManualWithdraw,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   const hook = useAsyncAsHook(async () => {
     const p2p = await api.wallet.call(WalletApiOperation.CheckPeerPullPayment, {
       talerUri: talerPayPullUri,

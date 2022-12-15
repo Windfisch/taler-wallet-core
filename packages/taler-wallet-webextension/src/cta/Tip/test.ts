@@ -36,23 +36,28 @@ describe("Tip CTA states", () => {
       talerTipUri: undefined,
       onCancel: nullFunction,
       onSuccess: nullFunction,
-    }
+    };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      ({ status, error }) => {
-        expect(status).equals("loading-uri");
-        if (!error) expect.fail();
-        if (!error.hasError) expect.fail();
-        if (error.operational) expect.fail();
-        expect(error.message).eq("ERROR_NO-URI-FOR-TIP");
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        ({ status, error }) => {
+          expect(status).equals("loading-uri");
+          if (!error) expect.fail();
+          if (!error.hasError) expect.fail();
+          if (error.operational) expect.fail();
+          expect(error.message).eq("ERROR_NO-URI-FOR-TIP");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -75,50 +80,58 @@ describe("Tip CTA states", () => {
       talerTipUri: "taler://tip/asd",
       onCancel: nullFunction,
       onSuccess: nullFunction,
-    }
+    };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") {
-          expect(state).eq({ status: "ready" });
-          return;
-        }
-        if (state.error) expect.fail();
-        expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
-        expect(state.merchantBaseUrl).eq("merchant url");
-        expect(state.exchangeBaseUrl).eq("exchange url");
-        if (state.accept.onClick === undefined) expect.fail();
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") {
+            expect(state).eq({ status: "ready" });
+            return;
+          }
+          if (state.error) expect.fail();
+          expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
+          expect(state.merchantBaseUrl).eq("merchant url");
+          expect(state.exchangeBaseUrl).eq("exchange url");
+          if (state.accept.onClick === undefined) expect.fail();
 
-        handler.addWalletCallResponse(WalletApiOperation.AcceptTip);
-        state.accept.onClick();
+          handler.addWalletCallResponse(WalletApiOperation.AcceptTip);
+          state.accept.onClick();
 
-        handler.addWalletCallResponse(WalletApiOperation.PrepareTip, undefined, {
-          accepted: true,
-          exchangeBaseUrl: "exchange url",
-          merchantBaseUrl: "merchant url",
-          tipAmountEffective: "EUR:1",
-          walletTipId: "tip_id",
-          expirationTimestamp: {
-            t_s: 1,
-          },
-          tipAmountRaw: "",
-        });
+          handler.addWalletCallResponse(
+            WalletApiOperation.PrepareTip,
+            undefined,
+            {
+              accepted: true,
+              exchangeBaseUrl: "exchange url",
+              merchantBaseUrl: "merchant url",
+              tipAmountEffective: "EUR:1",
+              walletTipId: "tip_id",
+              expirationTimestamp: {
+                t_s: 1,
+              },
+              tipAmountRaw: "",
+            },
+          );
+        },
+        (state) => {
+          if (state.status !== "accepted") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
+          expect(state.merchantBaseUrl).eq("merchant url");
+          expect(state.exchangeBaseUrl).eq("exchange url");
+        },
+      ],
+      TestingContext,
+    );
 
-      },
-      (state) => {
-        if (state.status !== "accepted") expect.fail()
-        if (state.error) expect.fail();
-        expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
-        expect(state.merchantBaseUrl).eq("merchant url");
-        expect(state.exchangeBaseUrl).eq("exchange url");
-      },
-    ], TestingContext)
-
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -140,25 +153,30 @@ describe("Tip CTA states", () => {
       talerTipUri: "taler://tip/asd",
       onCancel: nullFunction,
       onSuccess: nullFunction,
-    }
+    };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        if (state.error) expect.fail();
-        expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
-        expect(state.merchantBaseUrl).eq("merchant url");
-        expect(state.exchangeBaseUrl).eq("exchange url");
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
+          expect(state.merchantBaseUrl).eq("merchant url");
+          expect(state.exchangeBaseUrl).eq("exchange url");
 
-        //FIXME: add ignore button
-      },
-    ], TestingContext)
+          //FIXME: add ignore button
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -181,24 +199,28 @@ describe("Tip CTA states", () => {
       talerTipUri: "taler://tip/asd",
       onCancel: nullFunction,
       onSuccess: nullFunction,
-    }
+    };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "accepted") expect.fail();
-        if (state.error) expect.fail();
-        expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
-        expect(state.merchantBaseUrl).eq("merchant url");
-        expect(state.exchangeBaseUrl).eq("exchange url");
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "accepted") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
+          expect(state.merchantBaseUrl).eq("merchant url");
+          expect(state.exchangeBaseUrl).eq("exchange url");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 });

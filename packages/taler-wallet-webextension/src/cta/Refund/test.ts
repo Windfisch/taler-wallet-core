@@ -22,12 +22,16 @@
 import {
   Amounts,
   NotificationType,
-  OrderShortInfo
+  OrderShortInfo,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { tests } from "../../../../web-util/src/index.browser.js";
-import { createWalletApiMock, mountHook, nullFunction } from "../../test-utils.js";
+import {
+  createWalletApiMock,
+  mountHook,
+  nullFunction,
+} from "../../test-utils.js";
 import { useComponentState } from "./state.js";
 
 describe("Refund CTA states", () => {
@@ -38,23 +42,28 @@ describe("Refund CTA states", () => {
       talerRefundUri: undefined,
       cancel: nullFunction,
       onSuccess: nullFunction,
-    }
+    };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      ({ status, error }) => {
-        expect(status).equals("loading-uri");
-        if (!error) expect.fail();
-        if (!error.hasError) expect.fail();
-        if (error.operational) expect.fail();
-        expect(error.message).eq("ERROR_NO-URI-FOR-REFUND");
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        ({ status, error }) => {
+          expect(status).equals("loading-uri");
+          if (!error) expect.fail();
+          if (!error.hasError) expect.fail();
+          if (error.operational) expect.fail();
+          expect(error.message).eq("ERROR_NO-URI-FOR-REFUND");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -83,23 +92,28 @@ describe("Refund CTA states", () => {
       } as OrderShortInfo,
     });
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        if (state.error) expect.fail();
-        expect(state.accept.onClick).not.undefined;
-        expect(state.ignore.onClick).not.undefined;
-        expect(state.merchantName).eq("the merchant name");
-        expect(state.orderId).eq("orderId1");
-        expect(state.products).undefined;
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.accept.onClick).not.undefined;
+          expect(state.ignore.onClick).not.undefined;
+          expect(state.merchantName).eq("the merchant name");
+          expect(state.orderId).eq("orderId1");
+          expect(state.products).undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -132,30 +146,35 @@ describe("Refund CTA states", () => {
       } as OrderShortInfo,
     });
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail()
-        if (state.error) expect.fail()
-        expect(state.accept.onClick).not.undefined;
-        expect(state.merchantName).eq("the merchant name");
-        expect(state.orderId).eq("orderId1");
-        expect(state.products).undefined;
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.accept.onClick).not.undefined;
+          expect(state.merchantName).eq("the merchant name");
+          expect(state.orderId).eq("orderId1");
+          expect(state.products).undefined;
 
-        if (state.ignore.onClick === undefined) expect.fail();
-        state.ignore.onClick();
-      },
-      (state) => {
-        if (state.status !== "ignored") expect.fail()
-        if (state.error) expect.fail()
-        expect(state.merchantName).eq("the merchant name");
-      },
-    ], TestingContext)
+          if (state.ignore.onClick === undefined) expect.fail();
+          state.ignore.onClick();
+        },
+        (state) => {
+          if (state.status !== "ignored") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.merchantName).eq("the merchant name");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -220,42 +239,46 @@ describe("Refund CTA states", () => {
       } as OrderShortInfo,
     });
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        if (state.status !== "in-progress") expect.fail()
-        if (state.error) expect.fail();
-        expect(state.merchantName).eq("the merchant name");
-        expect(state.products).undefined;
-        expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
-        // expect(state.progress).closeTo(1 / 3, 0.01)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          if (state.status !== "in-progress") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.merchantName).eq("the merchant name");
+          expect(state.products).undefined;
+          expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
+          // expect(state.progress).closeTo(1 / 3, 0.01)
 
-        handler.notifyEventFromWallet(NotificationType.RefreshMelted);
-      },
-      (state) => {
-        if (state.status !== "in-progress") expect.fail()
-        if (state.error) expect.fail();
-        expect(state.merchantName).eq("the merchant name");
-        expect(state.products).undefined;
-        expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
-        // expect(state.progress).closeTo(2 / 3, 0.01)
+          handler.notifyEventFromWallet(NotificationType.RefreshMelted);
+        },
+        (state) => {
+          if (state.status !== "in-progress") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.merchantName).eq("the merchant name");
+          expect(state.products).undefined;
+          expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
+          // expect(state.progress).closeTo(2 / 3, 0.01)
 
-        handler.notifyEventFromWallet(NotificationType.RefreshMelted);
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail()
-        if (state.error) expect.fail();
-        expect(state.merchantName).eq("the merchant name");
-        expect(state.products).undefined;
-        expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
+          handler.notifyEventFromWallet(NotificationType.RefreshMelted);
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.merchantName).eq("the merchant name");
+          expect(state.products).undefined;
+          expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
+        },
+      ],
+      TestingContext,
+    );
 
-      },
-    ], TestingContext)
-
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 });

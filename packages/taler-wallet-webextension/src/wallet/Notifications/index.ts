@@ -21,7 +21,7 @@ import { compose, StateViewMap } from "../../utils/index.js";
 import { useComponentState } from "./state.js";
 import { LoadingUriView, ReadyView } from "./views.js";
 
-export type Props = object
+export type Props = object;
 
 export type State = State.Loading | State.LoadingUriError | State.Ready;
 

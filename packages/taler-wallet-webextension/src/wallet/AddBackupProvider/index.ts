@@ -14,22 +14,21 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  TalerErrorDetail
-} from "@gnu-taler/taler-util";
+import { TalerErrorDetail } from "@gnu-taler/taler-util";
 import { SyncTermsOfServiceResponse } from "@gnu-taler/taler-wallet-core";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   TextFieldHandler,
-  ToggleHandler
+  ToggleHandler,
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { useComponentState } from "./state.js";
 import {
-  ConfirmProviderView, LoadingUriView,
-  SelectProviderView
+  ConfirmProviderView,
+  LoadingUriView,
+  SelectProviderView,
 } from "./views.js";
 
 export interface Props {

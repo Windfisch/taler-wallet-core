@@ -64,7 +64,7 @@ const exchanges: ExchangeListItem[] = [
 
 const nullFunction = async (): Promise<void> => {
   null;
-}
+};
 
 describe("Withdraw CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
@@ -76,20 +76,25 @@ describe("Withdraw CTA states", () => {
       onSuccess: nullFunction,
     };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
-      ({ status }) => {
-        expect(status).equals("loading");
-      },
-      ({ status, error }) => {
-        if (status != "uri-error") expect.fail();
-        if (!error) expect.fail();
-        if (!error.hasError) expect.fail();
-        if (error.operational) expect.fail();
-        expect(error.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentStateFromURI,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equals("loading");
+        },
+        ({ status, error }) => {
+          if (status != "uri-error") expect.fail();
+          if (!error) expect.fail();
+          if (!error.hasError) expect.fail();
+          if (error.operational) expect.fail();
+          expect(error.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -110,17 +115,22 @@ describe("Withdraw CTA states", () => {
       },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
-      ({ status }) => {
-        expect(status).equals("loading");
-      },
-      ({ status, error }) => {
-        expect(status).equals("no-exchange");
-        expect(error).undefined;
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentStateFromURI,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equals("loading");
+        },
+        ({ status, error }) => {
+          expect(status).equals("no-exchange");
+          expect(error).undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -153,27 +163,32 @@ describe("Withdraw CTA states", () => {
       },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
-      ({ status }) => {
-        expect(status).equals("loading");
-      },
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        expect(state.status).equals("success");
-        if (state.status !== "success") return;
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentStateFromURI,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equals("loading");
+        },
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          expect(state.status).equals("success");
+          if (state.status !== "success") return;
 
-        expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
-        expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
-        expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
+          expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+          expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+          expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-        expect(state.doWithdrawal.onClick).not.undefined;
-      },
-    ], TestingContext)
+          expect(state.doWithdrawal.onClick).not.undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -221,39 +236,44 @@ describe("Withdraw CTA states", () => {
       },
     );
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentStateFromURI, props, [
-      ({ status }) => {
-        expect(status).equals("loading");
-      },
-      ({ status, error }) => {
-        expect(status).equals("loading");
-        expect(error).undefined;
-      },
-      (state) => {
-        expect(state.status).equals("success");
-        if (state.status !== "success") return;
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentStateFromURI,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equals("loading");
+        },
+        ({ status, error }) => {
+          expect(status).equals("loading");
+          expect(error).undefined;
+        },
+        (state) => {
+          expect(state.status).equals("success");
+          if (state.status !== "success") return;
 
-        expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
-        expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
-        expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
+          expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+          expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+          expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-        expect(state.doWithdrawal.onClick).undefined;
+          expect(state.doWithdrawal.onClick).undefined;
 
-        state.onTosUpdate();
-      },
-      (state) => {
-        expect(state.status).equals("success");
-        if (state.status !== "success") return;
+          state.onTosUpdate();
+        },
+        (state) => {
+          expect(state.status).equals("success");
+          if (state.status !== "success") return;
 
-        expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
-        expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
-        expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
+          expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+          expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+          expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-        expect(state.doWithdrawal.onClick).not.undefined;
-      },
-    ], TestingContext)
+          expect(state.doWithdrawal.onClick).not.undefined;
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 });

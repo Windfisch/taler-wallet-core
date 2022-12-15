@@ -19,10 +19,12 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useBackendContext } from "../../context/backend.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { talerRecoveryUri, onCancel, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  talerRecoveryUri,
+  onCancel,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   if (!talerRecoveryUri) {
     return {
       status: "loading-uri",

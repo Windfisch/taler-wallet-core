@@ -20,10 +20,12 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { talerTipUri, onCancel, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  talerTipUri,
+  onCancel,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   const tipInfo = useAsyncAsHook(async () => {
     if (!talerTipUri) throw Error("ERROR_NO-URI-FOR-TIP");
     const tip = await api.wallet.call(WalletApiOperation.PrepareTip, {

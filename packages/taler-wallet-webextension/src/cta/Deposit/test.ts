@@ -42,21 +42,26 @@ describe("Deposit CTA states", () => {
       },
     };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equals("loading");
-      },
-      ({ status, error }) => {
-        expect(status).equals("loading-uri");
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equals("loading");
+        },
+        ({ status, error }) => {
+          expect(status).equals("loading-uri");
 
-        if (!error) expect.fail();
-        if (!error.hasError) expect.fail();
-        if (error.operational) expect.fail();
-        expect(error.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
-      },
-    ], TestingContext)
+          if (!error) expect.fail();
+          if (!error.hasError) expect.fail();
+          if (error.operational) expect.fail();
+          expect(error.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 
@@ -83,21 +88,26 @@ describe("Deposit CTA states", () => {
       },
     };
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      ({ status }) => {
-        expect(status).equals("loading");
-      },
-      (state) => {
-        if (state.status !== "ready") expect.fail();
-        if (state.error) expect.fail();
-        expect(state.confirm.onClick).not.undefined;
-        expect(state.cost).deep.eq(Amounts.parseOrThrow("EUR:1.2"));
-        expect(state.fee).deep.eq(Amounts.parseOrThrow("EUR:0.2"));
-        expect(state.effective).deep.eq(Amounts.parseOrThrow("EUR:1"));
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        ({ status }) => {
+          expect(status).equals("loading");
+        },
+        (state) => {
+          if (state.status !== "ready") expect.fail();
+          if (state.error) expect.fail();
+          expect(state.confirm.onClick).not.undefined;
+          expect(state.cost).deep.eq(Amounts.parseOrThrow("EUR:1.2"));
+          expect(state.fee).deep.eq(Amounts.parseOrThrow("EUR:0.2"));
+          expect(state.effective).deep.eq(Amounts.parseOrThrow("EUR:1"));
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
   });
 });

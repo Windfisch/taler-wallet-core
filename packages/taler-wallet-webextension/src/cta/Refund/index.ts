@@ -24,7 +24,7 @@ import {
   IgnoredView,
   InProgressView,
   LoadingUriView,
-  ReadyView
+  ReadyView,
 } from "./views.js";
 
 export interface Props {

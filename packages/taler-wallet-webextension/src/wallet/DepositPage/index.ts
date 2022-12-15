@@ -20,7 +20,7 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   AmountFieldHandler,
   ButtonHandler,
-  SelectFieldHandler
+  SelectFieldHandler,
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { ManageAccountPage } from "../ManageAccount/index.js";
@@ -30,7 +30,7 @@ import {
   LoadingErrorView,
   NoAccountToDepositView,
   NoEnoughBalanceView,
-  ReadyView
+  ReadyView,
 } from "./views.js";
 
 export interface Props {

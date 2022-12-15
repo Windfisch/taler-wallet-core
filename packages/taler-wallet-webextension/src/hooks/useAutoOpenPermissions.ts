@@ -25,9 +25,11 @@ export function useAutoOpenPermissions(): ToggleHandler {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<TalerError | undefined>();
   const toggle = async (): Promise<void> => {
-    return handleAutoOpenPerm(enabled, setEnabled, api.background).catch((e) => {
-      setError(TalerError.fromException(e));
-    });
+    return handleAutoOpenPerm(enabled, setEnabled, api.background).catch(
+      (e) => {
+        setError(TalerError.fromException(e));
+      },
+    );
   };
 
   useEffect(() => {

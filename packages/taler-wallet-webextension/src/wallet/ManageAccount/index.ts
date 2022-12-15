@@ -20,7 +20,7 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   SelectFieldHandler,
-  TextFieldHandler
+  TextFieldHandler,
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { useComponentState } from "./state.js";

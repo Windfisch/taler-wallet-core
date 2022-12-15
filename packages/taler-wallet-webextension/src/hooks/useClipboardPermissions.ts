@@ -23,12 +23,14 @@ import { platform } from "../platform/api.js";
 export function useClipboardPermissions(): ToggleHandler {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<TalerError | undefined>();
-  const api = useBackendContext()
+  const api = useBackendContext();
 
   const toggle = async (): Promise<void> => {
-    return handleClipboardPerm(enabled, setEnabled, api.background).catch((e) => {
-      setError(TalerError.fromException(e));
-    });
+    return handleClipboardPerm(enabled, setEnabled, api.background).catch(
+      (e) => {
+        setError(TalerError.fromException(e));
+      },
+    );
   };
 
   useEffect(() => {

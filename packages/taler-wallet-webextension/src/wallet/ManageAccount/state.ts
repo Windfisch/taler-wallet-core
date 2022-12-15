@@ -17,7 +17,7 @@
 import {
   KnownBankAccountsInfo,
   parsePaytoUri,
-  stringifyPaytoUri
+  stringifyPaytoUri,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -25,10 +25,12 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { AccountByType, Props, State } from "./index.js";
 
-export function useComponentState(
-  { currency, onAccountAdded, onCancel }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  currency,
+  onAccountAdded,
+  onCancel,
+}: Props): State {
+  const api = useBackendContext();
   const hook = useAsyncAsHook(() =>
     api.wallet.call(WalletApiOperation.ListKnownBankAccounts, { currency }),
   );

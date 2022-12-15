@@ -19,7 +19,7 @@ import {
   AmountJson,
   Amounts,
   ExchangeListItem,
-  ExchangeTosStatus
+  ExchangeTosStatus,
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -29,10 +29,12 @@ import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
 import { RecursiveState } from "../../utils/index.js";
 import { PropsFromParams, PropsFromURI, State } from "./index.js";
 
-export function useComponentStateFromParams(
-  { amount, cancel, onSuccess }: PropsFromParams,
-): RecursiveState<State> {
-  const api = useBackendContext()
+export function useComponentStateFromParams({
+  amount,
+  cancel,
+  onSuccess,
+}: PropsFromParams): RecursiveState<State> {
+  const api = useBackendContext();
   const uriInfoHook = useAsyncAsHook(async () => {
     const exchanges = await api.wallet.call(
       WalletApiOperation.ListExchanges,
@@ -87,10 +89,12 @@ export function useComponentStateFromParams(
     );
 }
 
-export function useComponentStateFromURI(
-  { talerWithdrawUri, cancel, onSuccess }: PropsFromURI,
-): RecursiveState<State> {
-  const api = useBackendContext()
+export function useComponentStateFromURI({
+  talerWithdrawUri,
+  cancel,
+  onSuccess,
+}: PropsFromURI): RecursiveState<State> {
+  const api = useBackendContext();
   /**
    * Ask the wallet about the withdraw URI
    */
@@ -175,7 +179,7 @@ function exchangeSelectionState(
   exchangeList: ExchangeListItem[],
   defaultExchange: string | undefined,
 ): RecursiveState<State> {
-  const api = useBackendContext()
+  const api = useBackendContext();
   const selectedExchange = useSelectedExchange({
     currency: chosenAmount.currency,
     defaultExchange,
@@ -276,10 +280,10 @@ function exchangeSelectionState(
     //TODO: calculate based on exchange info
     const ageRestriction = ageRestrictionEnabled
       ? {
-        list: ageRestrictionOptions,
-        value: String(ageRestricted),
-        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-      }
+          list: ageRestrictionOptions,
+          value: String(ageRestricted),
+          onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+        }
       : undefined;
 
     return {

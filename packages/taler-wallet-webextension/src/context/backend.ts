@@ -23,7 +23,7 @@ import { ComponentChildren, createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
 import { wxApi, WxApiType } from "../wxApi.js";
 
-type Type = WxApiType
+type Type = WxApiType;
 
 const initial = wxApi;
 
@@ -31,7 +31,7 @@ const Context = createContext<Type>(initial);
 
 type Props = Partial<WxApiType> & {
   children: ComponentChildren;
-}
+};
 
 export const BackendProvider = ({
   wallet,
@@ -39,12 +39,11 @@ export const BackendProvider = ({
   listener,
   children,
 }: Props): VNode => {
-
   return h(Context.Provider, {
     value: {
       wallet: wallet ?? initial.wallet,
       background: background ?? initial.background,
-      listener: listener ?? initial.listener
+      listener: listener ?? initial.listener,
     },
     children,
   });

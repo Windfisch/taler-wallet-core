@@ -28,7 +28,7 @@ export function useBackupDeviceName(): BackupDeviceName {
     name: "",
     update: () => Promise.resolve(),
   });
-  const api = useBackendContext()
+  const api = useBackendContext();
 
   useEffect(() => {
     async function run(): Promise<void> {

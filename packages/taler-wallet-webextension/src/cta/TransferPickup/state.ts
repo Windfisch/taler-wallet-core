@@ -18,7 +18,7 @@ import {
   AbsoluteTime,
   Amounts,
   TalerErrorDetail,
-  TalerProtocolTimestamp
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -26,10 +26,12 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { talerPayPushUri, onClose, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  talerPayPushUri,
+  onClose,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   const hook = useAsyncAsHook(async () => {
     return await api.wallet.call(WalletApiOperation.CheckPeerPushPayment, {
       talerUri: talerPayPushUri,

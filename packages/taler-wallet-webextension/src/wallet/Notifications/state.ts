@@ -20,7 +20,7 @@ import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(p: Props): State {
-  const api = useBackendContext()
+  const api = useBackendContext();
   const hook = useAsyncAsHook(async () => {
     return await api.wallet.call(
       WalletApiOperation.GetUserAttentionRequests,

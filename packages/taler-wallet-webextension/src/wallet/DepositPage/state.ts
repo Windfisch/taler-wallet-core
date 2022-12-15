@@ -21,7 +21,7 @@ import {
   KnownBankAccountsInfo,
   parsePaytoUri,
   PaytoUri,
-  stringifyPaytoUri
+  stringifyPaytoUri,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -29,10 +29,13 @@ import { useBackendContext } from "../../context/backend.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { amount: amountStr, currency: currencyStr, onCancel, onSuccess }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({
+  amount: amountStr,
+  currency: currencyStr,
+  onCancel,
+  onSuccess,
+}: Props): State {
+  const api = useBackendContext();
   const parsed = amountStr === undefined ? undefined : Amounts.parse(amountStr);
   const currency = parsed !== undefined ? parsed.currency : currencyStr;
 
@@ -55,8 +58,8 @@ export function useComponentState(
     parsed !== undefined
       ? parsed
       : currency !== undefined
-        ? Amounts.zeroOfCurrency(currency)
-        : undefined;
+      ? Amounts.zeroOfCurrency(currency)
+      : undefined;
   // const [accountIdx, setAccountIdx] = useState<number>(0);
   const [amount, setAmount] = useState<AmountJson>(initialValue ?? ({} as any));
   const [selectedAccount, setSelectedAccount] = useState<PaytoUri>();
@@ -162,7 +165,11 @@ export function useComponentState(
   async function updateAmount(newAmount: AmountJson): Promise<void> {
     // const parsed = Amounts.parse(`${currency}:${numStr}`);
     try {
-      const result = await getFeeForAmount(currentAccount, newAmount, api.wallet);
+      const result = await getFeeForAmount(
+        currentAccount,
+        newAmount,
+        api.wallet,
+      );
       setAmount(newAmount);
       setFee(result);
     } catch (e) {
@@ -185,8 +192,8 @@ export function useComponentState(
   const amountError = !isDirty
     ? undefined
     : Amounts.cmp(balance, amount) === -1
-      ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
-      : undefined;
+    ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
+    : undefined;
 
   const unableToDeposit =
     Amounts.isZero(totalToDeposit) || //deposit may be zero because of fee

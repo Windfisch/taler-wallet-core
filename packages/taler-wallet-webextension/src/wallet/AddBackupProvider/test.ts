@@ -21,9 +21,7 @@
 
 import { expect } from "chai";
 import { tests } from "../../../../web-util/src/index.browser.js";
-import {
-  createWalletApiMock, nullFunction
-} from "../../test-utils.js";
+import { createWalletApiMock, nullFunction } from "../../test-utils.js";
 import { Props } from "./index.js";
 import { useComponentState } from "./state.js";
 
@@ -34,21 +32,24 @@ const props: Props = {
   onPaymentRequired: nullFunction,
 };
 describe("AddBackupProvider states", () => {
-
   it("should start in 'select-provider' state", async () => {
     const { handler, TestingContext } = createWalletApiMock();
 
-    const hookBehavior = await tests.hookBehaveLikeThis(useComponentState, props, [
-      (state) => {
-        expect(state.status).equal("select-provider");
-        if (state.status !== "select-provider") return;
-        expect(state.name.value).eq("");
-        expect(state.url.value).eq("");
-      },
-    ], TestingContext)
+    const hookBehavior = await tests.hookBehaveLikeThis(
+      useComponentState,
+      props,
+      [
+        (state) => {
+          expect(state.status).equal("select-provider");
+          if (state.status !== "select-provider") return;
+          expect(state.name.value).eq("");
+          expect(state.url.value).eq("");
+        },
+      ],
+      TestingContext,
+    );
 
-    expect(hookBehavior).deep.equal({ result: "ok" })
+    expect(hookBehavior).deep.equal({ result: "ok" });
     expect(handler.getCallingQueueState()).eq("empty");
-
   });
 });

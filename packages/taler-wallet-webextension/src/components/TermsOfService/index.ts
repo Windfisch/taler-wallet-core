@@ -25,7 +25,7 @@ import {
   LoadingUriView,
   ShowButtonsAcceptedTosView,
   ShowButtonsNonAcceptedTosView,
-  ShowTosContentView
+  ShowTosContentView,
 } from "./views.js";
 
 export interface Props {

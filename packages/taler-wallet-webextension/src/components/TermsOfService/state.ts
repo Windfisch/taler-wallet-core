@@ -21,10 +21,8 @@ import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { Props, State } from "./index.js";
 import { buildTermsOfServiceState } from "./utils.js";
 
-export function useComponentState(
-  { exchangeUrl, onChange }: Props,
-): State {
-  const api = useBackendContext()
+export function useComponentState({ exchangeUrl, onChange }: Props): State {
+  const api = useBackendContext();
   const readOnly = !onChange;
   const [showContent, setShowContent] = useState<boolean>(readOnly);
   const [errorAccepting, setErrorAccepting] = useState<Error | undefined>(
