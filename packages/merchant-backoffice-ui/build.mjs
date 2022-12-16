@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  This file is part of GNU Taler
- (C) 2022 Taler Systems S.A.
+ (C) 2021-2023 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -44,7 +44,29 @@ const preactCompatPlugin = {
   },
 };
 
-const entryPoints = ["src/index.tsx", "src/stories.tsx"];
+function getFilesInDirectory(startPath, regex) {
+  if (!fs.existsSync(startPath)) {
+    return;
+  }
+  const files = fs.readdirSync(startPath);
+  const result = files.flatMap(file => {
+    const filename = path.join(startPath, file);
+
+    const stat = fs.lstatSync(filename);
+    if (stat.isDirectory()) {
+      return getFilesInDirectory(filename, regex);
+    }
+    else if (regex.test(filename)) {
+      return filename
+    }
+  }).filter(x => !!x)
+
+  return result
+}
+
+const allTestFiles = getFilesInDirectory(path.join(BASE, 'src'), /.test.ts$/)
+
+const entryPoints = ["src/index.tsx", "src/stories.tsx", ...allTestFiles];
 
 let GIT_ROOT = BASE;
 while (!fs.existsSync(path.join(GIT_ROOT, ".git")) && GIT_ROOT !== "/") {
