@@ -89,8 +89,6 @@ export async function runLibeufinC5xTest(t: GlobalTestState) {
     "first payment",
   );
 
-  // Checking that C52 has one and C53 has zero.
-
   let expectOne = await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
@@ -100,7 +98,24 @@ export async function runLibeufinC5xTest(t: GlobalTestState) {
   t.assertTrue(expectOne.data.newTransactions == 1);
   t.assertTrue(expectOne.data.downloadedTransactions == 1);
 
+  /* Expect zero payments being downloaded because the
+   * previous request consumed already the one pending
+   * payment.
+   */
   let expectZero = await LibeufinNexusApi.fetchTransactions(
+    libeufinServices.libeufinNexus,
+    user01nexus.localAccountName,
+    "all", // range
+    "report", // C52
+  );
+  t.assertTrue(expectZero.data.newTransactions == 0);
+  t.assertTrue(expectZero.data.downloadedTransactions == 0);
+
+  /**
+   * A statement should still account zero payments because
+   * so far the payment made before is still pending. 
+   */
+  expectZero = await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
     "all", // range
@@ -109,13 +124,17 @@ export async function runLibeufinC5xTest(t: GlobalTestState) {
   t.assertTrue(expectZero.data.newTransactions == 0);
   t.assertTrue(expectZero.data.downloadedTransactions == 0);
 
-  // Ticking now: the one payment should be downloaded
-  // in a C53 but not in a C52.  In any case, the payment
-  // is not new anymore, because it was already ingested
-  // when it was downloaded for the first time along the
-  // c52 above.
+  /**
+   * Ticking now.  That books any pending transaction.
+   */
   await libeufinServices.libeufinSandbox.c53tick();
 
+  /**
+   * A statement is now expected to download the transaction,
+   * although that got already ingested along the report
+   * earlier.  Thus the transaction counts as downloaded but
+   * not as new.
+   */
   expectOne = await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
@@ -124,14 +143,5 @@ export async function runLibeufinC5xTest(t: GlobalTestState) {
   );
   t.assertTrue(expectOne.data.downloadedTransactions == 1);
   t.assertTrue(expectOne.data.newTransactions == 0);
-
-  expectZero = await LibeufinNexusApi.fetchTransactions(
-    libeufinServices.libeufinNexus,
-    user01nexus.localAccountName,
-    "all", // range
-    "report", // C52
-  );
-  t.assertTrue(expectZero.data.downloadedTransactions == 0);
-  t.assertTrue(expectZero.data.newTransactions == 0);
 }
 runLibeufinC5xTest.suites = ["libeufin"];

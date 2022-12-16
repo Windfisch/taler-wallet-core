@@ -89,10 +89,13 @@ export async function runLibeufinNexusBalanceTest(t: GlobalTestState) {
   );
   t.assertAmountEquals(accountInfo.data.lastSeenBalance, "EUR:20");
 
+  // Booking the first two transactions.
+  await libeufinServices.libeufinSandbox.c53tick();
+
   // user 01 gives 30
   await libeufinServices.libeufinSandbox.makeTransaction(
-    user01sandbox.ebicsBankAccount.label, // credit
-    user02sandbox.ebicsBankAccount.label, // debit
+    user01sandbox.ebicsBankAccount.label,
+    user02sandbox.ebicsBankAccount.label,
     "EUR:30",
     "third payment",
   );
