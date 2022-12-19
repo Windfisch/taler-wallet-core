@@ -28,6 +28,9 @@ import { useInstanceKYCDetails } from "../../hooks/instance.js";
 import { Translate } from "../../i18n/index.js";
 import { LangSelector } from "./LangSelector.js";
 
+const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
+const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : undefined;
+
 interface Props {
   onLogout: () => void;
   mobile?: boolean;
@@ -76,7 +79,7 @@ export function Sidebar({
             class="is-size-7 has-text-right"
             style={{ lineHeight: 0, marginTop: -10 }}
           >
-            {process.env.__VERSION__} ({config.version})
+            {VERSION} ({config.version})
           </div>
         </div>
       </div>

@@ -38,3 +38,5 @@ declare module '*.scss' {
   const content: Record<string, string>;
   export default content;
 }
+declare const __VERSION__: string;
+declare const __GIT_HASH__: string;
