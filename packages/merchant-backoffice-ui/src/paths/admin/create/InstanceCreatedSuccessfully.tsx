@@ -14,52 +14,61 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { h, VNode } from "preact";
 import { CreatedSuccessfully } from "../../../components/notifications/CreatedSuccessfully.js";
 import { Entity } from "./index.js";
 
-export function InstanceCreatedSuccessfully({ entity, onConfirm }: { entity: Entity; onConfirm: () => void; }): VNode {
-  return <CreatedSuccessfully onConfirm={onConfirm}>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">ID</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={entity.id} />
-          </p>
+export function InstanceCreatedSuccessfully({
+  entity,
+  onConfirm,
+}: {
+  entity: Entity;
+  onConfirm: () => void;
+}): VNode {
+  return (
+    <CreatedSuccessfully onConfirm={onConfirm}>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">ID</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input class="input" readonly value={entity.id} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Business Name</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={entity.name} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Business Name</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input class="input" readonly value={entity.name} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Access token</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            {entity.auth.method === 'external' && 'external'}
-            {entity.auth.method === 'token' &&
-              <input class="input" readonly value={entity.auth.token} />}
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Access token</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              {entity.auth.method === "external" && "external"}
+              {entity.auth.method === "token" && (
+                <input class="input" readonly value={entity.auth.token} />
+              )}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  </CreatedSuccessfully>;
+    </CreatedSuccessfully>
+  );
 }

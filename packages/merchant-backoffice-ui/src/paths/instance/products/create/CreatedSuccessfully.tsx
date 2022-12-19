@@ -24,44 +24,49 @@ interface Props {
   onCreateAnother?: () => void;
 }
 
-export function CreatedSuccessfully({ entity, onConfirm, onCreateAnother }: Props): VNode {
-
-  return <Template onConfirm={onConfirm} onCreateAnother={onCreateAnother}>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Image</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <img src={entity.image} style={{ width: 200, height: 200 }} />
-          </p>
+export function CreatedSuccessfully({
+  entity,
+  onConfirm,
+  onCreateAnother,
+}: Props): VNode {
+  return (
+    <Template onConfirm={onConfirm} onCreateAnother={onCreateAnother}>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Image</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <img src={entity.image} style={{ width: 200, height: 200 }} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Description</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <textarea class="input" readonly value={entity.description} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Description</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <textarea class="input" readonly value={entity.description} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Price</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={entity.price} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Price</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input class="input" readonly value={entity.price} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  </Template>;
+    </Template>
+  );
 }

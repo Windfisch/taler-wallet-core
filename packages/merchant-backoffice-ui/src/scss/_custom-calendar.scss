@@ -16,30 +16,29 @@
 
 :root {
   --primary-color: #3298dc;
-  
-  --primary-text-color-dark: rgba(0,0,0,.87);
-  --secondary-text-color-dark: rgba(0,0,0,.57);
-  --disabled-text-color-dark: rgba(0,0,0,.13);
-  
-  --primary-text-color-light: rgba(255,255,255,.87);
-  --secondary-text-color-light: rgba(255,255,255,.57);
-  --disabled-text-color-light: rgba(255,255,255,.13);
-  
-  --font-stack: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  
+
+  --primary-text-color-dark: rgba(0, 0, 0, 0.87);
+  --secondary-text-color-dark: rgba(0, 0, 0, 0.57);
+  --disabled-text-color-dark: rgba(0, 0, 0, 0.13);
+
+  --primary-text-color-light: rgba(255, 255, 255, 0.87);
+  --secondary-text-color-light: rgba(255, 255, 255, 0.57);
+  --disabled-text-color-light: rgba(255, 255, 255, 0.13);
+
+  --font-stack: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
   --primary-card-color: #fff;
   --primary-background-color: #f2f2f2;
-  
-  --box-shadow-lvl-1: 0 1px 3px rgba(0, 0, 0, 0.12),
-                      0 1px 2px rgba(0, 0, 0, 0.24);
-  --box-shadow-lvl-2: 0 3px 6px rgba(0, 0, 0, 0.16),
-                      0 3px 6px rgba(0, 0, 0, 0.23);
-  --box-shadow-lvl-3: 0 10px 20px rgba(0, 0, 0, 0.19),
-                      0 6px 6px rgba(0, 0, 0, 0.23);
-  --box-shadow-lvl-4: 0 14px 28px rgba(0, 0, 0, 0.25),
-                      0 10px 10px rgba(0, 0, 0, 0.22);
-}
 
+  --box-shadow-lvl-1: 0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+  --box-shadow-lvl-2: 0 3px 6px rgba(0, 0, 0, 0.16),
+    0 3px 6px rgba(0, 0, 0, 0.23);
+  --box-shadow-lvl-3: 0 10px 20px rgba(0, 0, 0, 0.19),
+    0 6px 6px rgba(0, 0, 0, 0.23);
+  --box-shadow-lvl-4: 0 14px 28px rgba(0, 0, 0, 0.25),
+    0 10px 10px rgba(0, 0, 0, 0.22);
+}
 
 .datePicker {
   text-align: left;
@@ -52,7 +51,7 @@
   width: 90vw;
   max-width: 448px;
   transform-origin: top left;
-  transition: transform .22s ease-in-out, opacity .22s ease-in-out;
+  transition: transform 0.22s ease-in-out, opacity 0.22s ease-in-out;
   top: 50%;
   left: 50%;
   opacity: 0;
@@ -63,7 +62,7 @@
     opacity: 1;
     transform: scale(1) translate(-50%, -50%);
   }
-  
+
   .datePicker--titles {
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
@@ -71,7 +70,8 @@
     height: 100px;
     background: var(--primary-color);
 
-    h2, h3 {
+    h2,
+    h3 {
       cursor: pointer;
       color: #fff;
       line-height: 1;
@@ -81,7 +81,7 @@
     }
 
     h3 {
-      color: rgba(255,255,255,.57);
+      color: rgba(255, 255, 255, 0.57);
       font-size: 18px;
       padding-bottom: 2px;
     }
@@ -110,13 +110,13 @@
       font-size: 26px;
       user-select: none;
       border-radius: 50%;
-      
+
       &:hover {
         background: var(--disabled-text-color-dark);
       }
     }
   }
-  
+
   .datePicker--scroll {
     overflow-y: auto;
     max-height: calc(90vh - 56px - 100px);
@@ -129,9 +129,11 @@
       width: 100%;
       display: grid;
       text-align: center;
-      
+
       // there's probably a better way to do this, but wanted to try out CSS grid
-      grid-template-columns: calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7);
+      grid-template-columns: calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(
+          100% / 7
+        ) calc(100% / 7) calc(100% / 7) calc(100% / 7);
 
       span {
         color: var(--secondary-text-color-dark);
@@ -145,14 +147,16 @@
       width: 100%;
       display: grid;
       text-align: center;
-      grid-template-columns: calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7);
+      grid-template-columns: calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(
+          100% / 7
+        ) calc(100% / 7) calc(100% / 7) calc(100% / 7);
 
       span {
         color: var(--primary-text-color-dark);
         line-height: 42px;
         font-size: 14px;
         display: inline-grid;
-        transition: color .22s;
+        transition: color 0.22s;
         height: 42px;
         position: relative;
         cursor: pointer;
@@ -160,7 +164,7 @@
         border-radius: 50%;
 
         &::before {
-          content: '';
+          content: "";
           position: absolute;
           z-index: -1;
           height: 42px;
@@ -168,12 +172,12 @@
           left: calc(50% - 21px);
           background: var(--primary-color);
           border-radius: 50%;
-          transition: transform .22s, opacity .22s;
+          transition: transform 0.22s, opacity 0.22s;
           transform: scale(0);
           opacity: 0;
         }
-        
-        &[disabled=true] {
+
+        &[disabled="true"] {
           cursor: unset;
         }
 
@@ -182,7 +186,7 @@
         }
 
         &.datePicker--selected {
-          color: rgba(255,255,255,.87);
+          color: rgba(255, 255, 255, 0.87);
 
           &:before {
             transform: scale(1);
@@ -192,21 +196,21 @@
       }
     }
   }
-  
+
   .datePicker--selectYear {
     padding: 0 20px;
     display: block;
     width: 100%;
     text-align: center;
     max-height: 362px;
-    
+
     span {
       display: block;
       width: 100%;
       font-size: 24px;
       margin: 20px auto;
       cursor: pointer;
-      
+
       &.selected {
         font-size: 42px;
         color: var(--primary-color);
@@ -232,9 +236,10 @@
       appearance: none;
       padding: 0 16px;
       border-radius: 3px;
-      transition: background-color .13s;
+      transition: background-color 0.13s;
 
-      &:hover, &:focus {
+      &:hover,
+      &:focus {
         outline: none;
         background-color: var(--disabled-text-color-dark);
       }
@@ -249,6 +254,6 @@
   left: 0;
   bottom: 0;
   right: 0;
-  background: rgba(0,0,0,.52);
-  animation: fadeIn .22s forwards;
+  background: rgba(0, 0, 0, 0.52);
+  animation: fadeIn 0.22s forwards;
 }

@@ -33,11 +33,11 @@ export function useReservesAPI(): ReserveMutateAPI {
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
-    ? { url: baseUrl, token: adminToken, }
-    : { url: `${baseUrl}/instances/${id}`, token: instanceToken, };
+    ? { url: baseUrl, token: adminToken }
+    : { url: `${baseUrl}/instances/${id}`, token: instanceToken };
 
   const createReserve = async (
-    data: MerchantBackend.Tips.ReserveCreateRequest
+    data: MerchantBackend.Tips.ReserveCreateRequest,
   ): Promise<
     HttpResponseOk<MerchantBackend.Tips.ReserveCreateConfirmation>
   > => {
@@ -47,7 +47,7 @@ export function useReservesAPI(): ReserveMutateAPI {
         method: "post",
         token,
         data,
-      }
+      },
     );
 
     //evict reserve list query
@@ -58,7 +58,7 @@ export function useReservesAPI(): ReserveMutateAPI {
 
   const authorizeTipReserve = async (
     pub: string,
-    data: MerchantBackend.Tips.TipCreateRequest
+    data: MerchantBackend.Tips.TipCreateRequest,
   ): Promise<HttpResponseOk<MerchantBackend.Tips.TipCreateConfirmation>> => {
     const res = await request<MerchantBackend.Tips.TipCreateConfirmation>(
       `${url}/private/reserves/${pub}/authorize-tip`,
@@ -66,7 +66,7 @@ export function useReservesAPI(): ReserveMutateAPI {
         method: "post",
         token,
         data,
-      }
+      },
     );
 
     //evict reserve details query
@@ -76,7 +76,7 @@ export function useReservesAPI(): ReserveMutateAPI {
   };
 
   const authorizeTip = async (
-    data: MerchantBackend.Tips.TipCreateRequest
+    data: MerchantBackend.Tips.TipCreateRequest,
   ): Promise<HttpResponseOk<MerchantBackend.Tips.TipCreateConfirmation>> => {
     const res = await request<MerchantBackend.Tips.TipCreateConfirmation>(
       `${url}/private/tips`,
@@ -84,7 +84,7 @@ export function useReservesAPI(): ReserveMutateAPI {
         method: "post",
         token,
         data,
-      }
+      },
     );
 
     //evict all details query
@@ -110,14 +110,14 @@ export function useReservesAPI(): ReserveMutateAPI {
 
 export interface ReserveMutateAPI {
   createReserve: (
-    data: MerchantBackend.Tips.ReserveCreateRequest
+    data: MerchantBackend.Tips.ReserveCreateRequest,
   ) => Promise<HttpResponseOk<MerchantBackend.Tips.ReserveCreateConfirmation>>;
   authorizeTipReserve: (
     id: string,
-    data: MerchantBackend.Tips.TipCreateRequest
+    data: MerchantBackend.Tips.TipCreateRequest,
   ) => Promise<HttpResponseOk<MerchantBackend.Tips.TipCreateConfirmation>>;
   authorizeTip: (
-    data: MerchantBackend.Tips.TipCreateRequest
+    data: MerchantBackend.Tips.TipCreateRequest,
   ) => Promise<HttpResponseOk<MerchantBackend.Tips.TipCreateConfirmation>>;
   deleteReserve: (id: string) => Promise<HttpResponse<void>>;
 }
@@ -127,8 +127,8 @@ export function useInstanceReserves(): HttpResponse<MerchantBackend.Tips.Tipping
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
-    ? { url: baseUrl, token: baseToken, }
-    : { url: `${baseUrl}/instances/${id}`, token: instanceToken, };
+    ? { url: baseUrl, token: baseToken }
+    : { url: `${baseUrl}/instances/${id}`, token: instanceToken };
 
   const { data, error, isValidating } = useSWR<
     HttpResponseOk<MerchantBackend.Tips.TippingReserveStatus>,
@@ -142,7 +142,7 @@ export function useInstanceReserves(): HttpResponse<MerchantBackend.Tips.Tipping
 }
 
 export function useReserveDetails(
-  reserveId: string
+  reserveId: string,
 ): HttpResponse<MerchantBackend.Tips.ReserveDetail> {
   const { url: baseUrl } = useBackendContext();
   const { token, id: instanceId, admin } = useInstanceContext();
@@ -167,7 +167,7 @@ export function useReserveDetails(
 }
 
 export function useTipDetails(
-  tipId: string
+  tipId: string,
 ): HttpResponse<MerchantBackend.Tips.TipDetails> {
   const { url: baseUrl } = useBackendContext();
   const { token, id: instanceId, admin } = useInstanceContext();
@@ -194,7 +194,7 @@ export function useTipDetails(
 function reserveDetailFetcher<T>(
   url: string,
   token: string,
-  backend: string
+  backend: string,
 ): Promise<HttpResponseOk<T>> {
   return request<T>(`${backend}${url}`, {
     token,
@@ -207,7 +207,7 @@ function reserveDetailFetcher<T>(
 function tipsDetailFetcher<T>(
   url: string,
   token: string,
-  backend: string
+  backend: string,
 ): Promise<HttpResponseOk<T>> {
   return request<T>(`${backend}${url}`, {
     token,

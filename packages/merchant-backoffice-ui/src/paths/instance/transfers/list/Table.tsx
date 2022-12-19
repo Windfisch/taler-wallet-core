@@ -173,7 +173,7 @@ function Table({
                       ? i18n`never`
                       : format(
                           i.execution_time.t_s * 1000,
-                          "yyyy/MM/dd HH:mm:ss"
+                          "yyyy/MM/dd HH:mm:ss",
                         )
                     : i18n`unknown`}
                 </td>

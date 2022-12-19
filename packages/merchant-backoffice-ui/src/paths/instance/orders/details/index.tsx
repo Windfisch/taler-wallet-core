@@ -32,36 +32,49 @@ export interface Props {
   onLoadError: (error: HttpError) => VNode;
 }
 
-export default function Update({ oid, onBack, onLoadError, onNotFound, onUnauthorized }: Props): VNode {
+export default function Update({
+  oid,
+  onBack,
+  onLoadError,
+  onNotFound,
+  onUnauthorized,
+}: Props): VNode {
   const { refundOrder } = useOrderAPI();
-  const result = useOrderDetails(oid)
-  const [notif, setNotif] = useState<Notification | undefined>(undefined)
+  const result = useOrderDetails(oid);
+  const [notif, setNotif] = useState<Notification | undefined>(undefined);
 
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
-  if (result.clientError && result.isUnauthorized) return onUnauthorized()
-  if (result.clientError && result.isNotfound) return onNotFound()
-  if (result.loading) return <Loading />
-  if (!result.ok) return onLoadError(result)
+  if (result.clientError && result.isUnauthorized) return onUnauthorized();
+  if (result.clientError && result.isNotfound) return onNotFound();
+  if (result.loading) return <Loading />;
+  if (!result.ok) return onLoadError(result);
 
-  return <Fragment>
+  return (
+    <Fragment>
+      <NotificationCard notification={notif} />
 
-    <NotificationCard notification={notif} />
-
-    <DetailPage
-      onBack={onBack}
-      id={oid}
-      onRefund={(id, value) => refundOrder(id, value)
-        .then(() => setNotif({
-          message: i18n`refund created successfully`,
-          type: "SUCCESS"
-        })).catch((error) => setNotif({
-          message: i18n`could not create the refund`,
-          type: "ERROR",
-          description: error.message
-        }))
-      }
-      selected={result.data}
-    />
-  </Fragment>
+      <DetailPage
+        onBack={onBack}
+        id={oid}
+        onRefund={(id, value) =>
+          refundOrder(id, value)
+            .then(() =>
+              setNotif({
+                message: i18n`refund created successfully`,
+                type: "SUCCESS",
+              }),
+            )
+            .catch((error) =>
+              setNotif({
+                message: i18n`could not create the refund`,
+                type: "ERROR",
+                description: error.message,
+              }),
+            )
+        }
+        selected={result.data}
+      />
+    </Fragment>
+  );
 }

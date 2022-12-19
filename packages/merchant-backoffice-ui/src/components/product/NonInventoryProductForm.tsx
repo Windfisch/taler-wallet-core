@@ -15,7 +15,7 @@
  */
 import { Fragment, h, VNode } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
-import * as yup from 'yup';
+import * as yup from "yup";
 import { FormErrors, FormProvider } from "../form/FormProvider.js";
 import { Input } from "../form/Input.js";
 import { InputCurrency } from "../form/InputCurrency.js";
@@ -25,67 +25,104 @@ import { InputTaxes } from "../form/InputTaxes.js";
 import { MerchantBackend } from "../../declaration.js";
 import { useListener } from "../../hooks/listener.js";
 import { Translate, useTranslator } from "../../i18n/index.js";
-import {
-  NonInventoryProductSchema as schema
-} from "../../schemas/index.js";
+import { NonInventoryProductSchema as schema } from "../../schemas/index.js";
 
-
-type Entity = MerchantBackend.Product
+type Entity = MerchantBackend.Product;
 
 interface Props {
   onAddProduct: (p: Entity) => Promise<void>;
   productToEdit?: Entity;
 }
-export function NonInventoryProductFrom({ productToEdit, onAddProduct }: Props): VNode {
-  const [showCreateProduct, setShowCreateProduct] = useState(false)
+export function NonInventoryProductFrom({
+  productToEdit,
+  onAddProduct,
+}: Props): VNode {
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
 
-  const isEditing = !!productToEdit
+  const isEditing = !!productToEdit;
 
   useEffect(() => {
-    setShowCreateProduct(isEditing)
-  }, [isEditing])
+    setShowCreateProduct(isEditing);
+  }, [isEditing]);
 
-  const [submitForm, addFormSubmitter] = useListener<Partial<MerchantBackend.Product> | undefined>((result) => {
+  const [submitForm, addFormSubmitter] = useListener<
+    Partial<MerchantBackend.Product> | undefined
+  >((result) => {
     if (result) {
-      setShowCreateProduct(false)
+      setShowCreateProduct(false);
       return onAddProduct({
         quantity: result.quantity || 0,
         taxes: result.taxes || [],
-        description: result.description || '',
-        image: result.image || '',
-        price: result.price || '',
-        unit: result.unit || ''
-      })
+        description: result.description || "",
+        image: result.image || "",
+        price: result.price || "",
+        unit: result.unit || "",
+      });
     }
-    return Promise.resolve()
-  })
+    return Promise.resolve();
+  });
 
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
-  return <Fragment>
-    <div class="buttons">
-      <button class="button is-success" data-tooltip={i18n`describe and add a product that is not in the inventory list`} onClick={() => setShowCreateProduct(true)} ><Translate>Add custom product</Translate></button>
-    </div>
-    {showCreateProduct && <div class="modal is-active">
-      <div class="modal-background " onClick={() => setShowCreateProduct(false)} />
-      <div class="modal-card">
-        <header class="modal-card-head">
-          <p class="modal-card-title">{i18n`Complete information of the product`}</p>
-          <button class="delete " aria-label="close" onClick={() => setShowCreateProduct(false)} />
-        </header>
-        <section class="modal-card-body">
-          <ProductForm initial={productToEdit} onSubscribe={addFormSubmitter} />
-        </section>
-        <footer class="modal-card-foot">
-          <div class="buttons is-right" style={{ width: '100%' }}>
-            <button class="button " onClick={() => setShowCreateProduct(false)} ><Translate>Cancel</Translate></button>
-            <button class="button is-info " disabled={!submitForm} onClick={submitForm} ><Translate>Confirm</Translate></button>
-          </div>
-        </footer>
+  return (
+    <Fragment>
+      <div class="buttons">
+        <button
+          class="button is-success"
+          data-tooltip={i18n`describe and add a product that is not in the inventory list`}
+          onClick={() => setShowCreateProduct(true)}
+        >
+          <Translate>Add custom product</Translate>
+        </button>
       </div>
-      <button class="modal-close is-large " aria-label="close" onClick={() => setShowCreateProduct(false)} />
-    </div>}
-  </Fragment>
+      {showCreateProduct && (
+        <div class="modal is-active">
+          <div
+            class="modal-background "
+            onClick={() => setShowCreateProduct(false)}
+          />
+          <div class="modal-card">
+            <header class="modal-card-head">
+              <p class="modal-card-title">{i18n`Complete information of the product`}</p>
+              <button
+                class="delete "
+                aria-label="close"
+                onClick={() => setShowCreateProduct(false)}
+              />
+            </header>
+            <section class="modal-card-body">
+              <ProductForm
+                initial={productToEdit}
+                onSubscribe={addFormSubmitter}
+              />
+            </section>
+            <footer class="modal-card-foot">
+              <div class="buttons is-right" style={{ width: "100%" }}>
+                <button
+                  class="button "
+                  onClick={() => setShowCreateProduct(false)}
+                >
+                  <Translate>Cancel</Translate>
+                </button>
+                <button
+                  class="button is-info "
+                  disabled={!submitForm}
+                  onClick={submitForm}
+                >
+                  <Translate>Confirm</Translate>
+                </button>
+              </div>
+            </footer>
+          </div>
+          <button
+            class="modal-close is-large "
+            aria-label="close"
+            onClick={() => setShowCreateProduct(false)}
+          />
+        </div>
+      )}
+    </Fragment>
+  );
 }
 
 interface ProductProps {
@@ -106,41 +143,73 @@ export function ProductForm({ onSubscribe, initial }: ProductProps): VNode {
   const [value, valueHandler] = useState<Partial<NonInventoryProduct>>({
     taxes: [],
     ...initial,
-  })
-  let errors: FormErrors<Entity> = {}
+  });
+  let errors: FormErrors<Entity> = {};
   try {
-    schema.validateSync(value, { abortEarly: false })
+    schema.validateSync(value, { abortEarly: false });
   } catch (err) {
     if (err instanceof yup.ValidationError) {
-      const yupErrors = err.inner as yup.ValidationError[]
-      errors = yupErrors.reduce((prev, cur) => !cur.path ? prev : ({ ...prev, [cur.path]: cur.message }), {})
+      const yupErrors = err.inner as yup.ValidationError[];
+      errors = yupErrors.reduce(
+        (prev, cur) =>
+          !cur.path ? prev : { ...prev, [cur.path]: cur.message },
+        {},
+      );
     }
   }
 
   const submit = useCallback((): Entity | undefined => {
-    return value as MerchantBackend.Product
-  }, [value])
+    return value as MerchantBackend.Product;
+  }, [value]);
 
-  const hasErrors = Object.keys(errors).some(k => (errors as any)[k] !== undefined)
+  const hasErrors = Object.keys(errors).some(
+    (k) => (errors as any)[k] !== undefined,
+  );
 
   useEffect(() => {
-    onSubscribe(hasErrors ? undefined : submit)
-  }, [submit, hasErrors])
+    onSubscribe(hasErrors ? undefined : submit);
+  }, [submit, hasErrors]);
 
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
-  return <div>
-    <FormProvider<NonInventoryProduct> name="product" errors={errors} object={value} valueHandler={valueHandler} >
+  return (
+    <div>
+      <FormProvider<NonInventoryProduct>
+        name="product"
+        errors={errors}
+        object={value}
+        valueHandler={valueHandler}
+      >
+        <InputImage<NonInventoryProduct>
+          name="image"
+          label={i18n`Image`}
+          tooltip={i18n`photo of the product`}
+        />
+        <Input<NonInventoryProduct>
+          name="description"
+          inputType="multiline"
+          label={i18n`Description`}
+          tooltip={i18n`full product description`}
+        />
+        <Input<NonInventoryProduct>
+          name="unit"
+          label={i18n`Unit`}
+          tooltip={i18n`name of the product unit`}
+        />
+        <InputCurrency<NonInventoryProduct>
+          name="price"
+          label={i18n`Price`}
+          tooltip={i18n`amount in the current currency`}
+        />
 
-      <InputImage<NonInventoryProduct> name="image" label={i18n`Image`} tooltip={i18n`photo of the product`} />
-      <Input<NonInventoryProduct> name="description" inputType="multiline" label={i18n`Description`} tooltip={i18n`full product description`} />
-      <Input<NonInventoryProduct> name="unit" label={i18n`Unit`} tooltip={i18n`name of the product unit`} />
-      <InputCurrency<NonInventoryProduct> name="price" label={i18n`Price`} tooltip={i18n`amount in the current currency`} />
+        <InputNumber<NonInventoryProduct>
+          name="quantity"
+          label={i18n`Quantity`}
+          tooltip={i18n`how many products will be added`}
+        />
 
-      <InputNumber<NonInventoryProduct> name="quantity" label={i18n`Quantity`} tooltip={i18n`how many products will be added`} />
-
-      <InputTaxes<NonInventoryProduct> name="taxes" label={i18n`Taxes`} />
-
-    </FormProvider>
-  </div>
+        <InputTaxes<NonInventoryProduct> name="taxes" label={i18n`Taxes`} />
+      </FormProvider>
+    </div>
+  );
 }

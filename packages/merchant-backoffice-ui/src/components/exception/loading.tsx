@@ -15,18 +15,34 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { h, VNode } from "preact";
 
 export function Loading(): VNode {
-  return <div class="columns is-centered is-vcentered" style={{ height: 'calc(100% - 3rem)', position: 'absolute', width: '100%' }}>
-    <Spinner />
-  </div>
+  return (
+    <div
+      class="columns is-centered is-vcentered"
+      style={{
+        height: "calc(100% - 3rem)",
+        position: "absolute",
+        width: "100%",
+      }}
+    >
+      <Spinner />
+    </div>
+  );
 }
 
 export function Spinner(): VNode {
-  return <div class="lds-ring"><div /><div /><div /><div /></div>
+  return (
+    <div class="lds-ring">
+      <div />
+      <div />
+      <div />
+      <div />
+    </div>
+  );
 }

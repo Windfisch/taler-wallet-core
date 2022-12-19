@@ -59,8 +59,8 @@ export function ProductList({ list, actions = [] }: Props): VNode {
               : Amounts.stringify(
                   Amounts.mult(
                     Amounts.parseOrThrow(entry.price),
-                    entry.quantity
-                  ).amount
+                    entry.quantity,
+                  ).amount,
                 );
 
             return (

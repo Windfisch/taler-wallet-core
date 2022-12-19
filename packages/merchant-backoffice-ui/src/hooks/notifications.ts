@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { useState } from "preact/hooks";
 import { Notification } from "../utils/types.js";
@@ -28,21 +28,29 @@ interface Result {
   removeNotification: (n: Notification) => void;
 }
 
-type NotificationWithDate = Notification & { since: Date }
+type NotificationWithDate = Notification & { since: Date };
 
-export function useNotifications(initial: Notification[] = [], timeout = 3000): Result {
-  const [notifications, setNotifications] = useState<(NotificationWithDate)[]>(initial.map(i => ({...i, since: new Date() })))
+export function useNotifications(
+  initial: Notification[] = [],
+  timeout = 3000,
+): Result {
+  const [notifications, setNotifications] = useState<NotificationWithDate[]>(
+    initial.map((i) => ({ ...i, since: new Date() })),
+  );
 
   const pushNotification = (n: Notification): void => {
-    const entry = { ...n, since: new Date() }
-    setNotifications(ns => [...ns, entry])
-    if (n.type !== 'ERROR') setTimeout(() => {
-      setNotifications(ns => ns.filter(x => x.since !== entry.since))
-    }, timeout)
-  }
+    const entry = { ...n, since: new Date() };
+    setNotifications((ns) => [...ns, entry]);
+    if (n.type !== "ERROR")
+      setTimeout(() => {
+        setNotifications((ns) => ns.filter((x) => x.since !== entry.since));
+      }, timeout);
+  };
 
   const removeNotification = (notif: Notification) => {
-    setNotifications((ns: NotificationWithDate[]) => ns.filter(n => n !== notif))
-  }
-  return { notifications, pushNotification, removeNotification }
+    setNotifications((ns: NotificationWithDate[]) =>
+      ns.filter((n) => n !== notif),
+    );
+  };
+  return { notifications, pushNotification, removeNotification };
 }

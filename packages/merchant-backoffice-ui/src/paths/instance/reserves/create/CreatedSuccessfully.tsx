@@ -20,7 +20,10 @@ import { MerchantBackend } from "../../../../declaration.js";
 import { Translate } from "../../../../i18n/index.js";
 import { QR } from "../../../../components/exception/QR.js";
 
-type Entity = { request: MerchantBackend.Tips.ReserveCreateRequest, response: MerchantBackend.Tips.ReserveCreateConfirmation };
+type Entity = {
+  request: MerchantBackend.Tips.ReserveCreateRequest;
+  response: MerchantBackend.Tips.ReserveCreateConfirmation;
+};
 
 interface Props {
   entity: Entity;
@@ -28,52 +31,77 @@ interface Props {
   onCreateAnother?: () => void;
 }
 
-export function CreatedSuccessfully({ entity, onConfirm, onCreateAnother }: Props): VNode {
-  const link = `${entity.response.payto_uri}?message=${entity.response.reserve_pub}&amount=${entity.request.initial_balance}`
+export function CreatedSuccessfully({
+  entity,
+  onConfirm,
+  onCreateAnother,
+}: Props): VNode {
+  const link = `${entity.response.payto_uri}?message=${entity.response.reserve_pub}&amount=${entity.request.initial_balance}`;
 
-  return <Template onConfirm={onConfirm} onCreateAnother={onCreateAnother}>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Amount</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input readonly class="input" value={entity.request.initial_balance} />
-          </p>
+  return (
+    <Template onConfirm={onConfirm} onCreateAnother={onCreateAnother}>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Amount</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input
+                readonly
+                class="input"
+                value={entity.request.initial_balance}
+              />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Exchange bank account</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input readonly class="input" value={entity.response.payto_uri} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Exchange bank account</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input readonly class="input" value={entity.response.payto_uri} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Wire transfer subject</label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={entity.response.reserve_pub} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">Wire transfer subject</label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input
+                class="input"
+                readonly
+                value={entity.response.reserve_pub}
+              />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <p class="is-size-5"><Translate>To complete the setup of the reserve, you must now initiate a wire transfer using the given wire transfer subject and crediting the specified amount to the indicated account of the exchange.</Translate></p>
-    <p class="is-size-5"><Translate>If your system supports RFC 8905, you can do this by opening this URI:</Translate></p>
-    <pre>
-      <a target="_blank" rel="noreferrer" href={link}>{link}</a>
-    </pre>
-    <QR text={link} />
-  </Template>;
+      <p class="is-size-5">
+        <Translate>
+          To complete the setup of the reserve, you must now initiate a wire
+          transfer using the given wire transfer subject and crediting the
+          specified amount to the indicated account of the exchange.
+        </Translate>
+      </p>
+      <p class="is-size-5">
+        <Translate>
+          If your system supports RFC 8905, you can do this by opening this URI:
+        </Translate>
+      </p>
+      <pre>
+        <a target="_blank" rel="noreferrer" href={link}>
+          {link}
+        </a>
+      </pre>
+      <QR text={link} />
+    </Template>
+  );
 }
-

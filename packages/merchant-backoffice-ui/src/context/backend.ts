@@ -15,12 +15,12 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createContext, h, VNode } from 'preact'
-import { useCallback, useContext, useState } from 'preact/hooks'
+import { createContext, h, VNode } from "preact";
+import { useCallback, useContext, useState } from "preact/hooks";
 import { useBackendDefaultToken, useBackendURL } from "../hooks/index.js";
 
 interface BackendContextType {
@@ -34,49 +34,76 @@ interface BackendContextType {
 }
 
 const BackendContext = createContext<BackendContextType>({
-  url: '',
+  url: "",
   token: undefined,
   triedToLog: false,
   resetBackend: () => null,
   clearAllTokens: () => null,
   addTokenCleaner: () => null,
   updateLoginStatus: () => null,
-})
+});
 
-function useBackendContextState(defaultUrl?: string, initialToken?: string): BackendContextType {
-  const [url, triedToLog, changeBackend, resetBackend] = useBackendURL(defaultUrl);
+function useBackendContextState(
+  defaultUrl?: string,
+  initialToken?: string,
+): BackendContextType {
+  const [url, triedToLog, changeBackend, resetBackend] =
+    useBackendURL(defaultUrl);
   const [token, _updateToken] = useBackendDefaultToken(initialToken);
   const updateToken = (t?: string) => {
-    _updateToken(t)
-  }
+    _updateToken(t);
+  };
 
-  const tokenCleaner = useCallback(() => { updateToken(undefined) }, [])
-  const [cleaners, setCleaners] = useState([tokenCleaner])
-  const addTokenCleaner = (c: () => void) => setCleaners(cs => [...cs, c])
-  const addTokenCleanerMemo = useCallback((c: () => void) => { addTokenCleaner(c) }, [tokenCleaner])
+  const tokenCleaner = useCallback(() => {
+    updateToken(undefined);
+  }, []);
+  const [cleaners, setCleaners] = useState([tokenCleaner]);
+  const addTokenCleaner = (c: () => void) => setCleaners((cs) => [...cs, c]);
+  const addTokenCleanerMemo = useCallback(
+    (c: () => void) => {
+      addTokenCleaner(c);
+    },
+    [tokenCleaner],
+  );
 
   const clearAllTokens = () => {
-    cleaners.forEach(c => c())
+    cleaners.forEach((c) => c());
     for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i)
-      if (k && /^backend-token/.test(k)) localStorage.removeItem(k)
+      const k = localStorage.key(i);
+      if (k && /^backend-token/.test(k)) localStorage.removeItem(k);
     }
-    resetBackend()
-  }
+    resetBackend();
+  };
 
   const updateLoginStatus = (url: string, token?: string) => {
     changeBackend(url);
     if (token) updateToken(token);
   };
 
-
-  return { url, token, triedToLog, updateLoginStatus, resetBackend, clearAllTokens, addTokenCleaner: addTokenCleanerMemo }
+  return {
+    url,
+    token,
+    triedToLog,
+    updateLoginStatus,
+    resetBackend,
+    clearAllTokens,
+    addTokenCleaner: addTokenCleanerMemo,
+  };
 }
 
-export const BackendContextProvider = ({ children, defaultUrl, initialToken }: { children: any, defaultUrl?: string, initialToken?: string }): VNode => {
-  const value = useBackendContextState(defaultUrl, initialToken)
+export const BackendContextProvider = ({
+  children,
+  defaultUrl,
+  initialToken,
+}: {
+  children: any;
+  defaultUrl?: string;
+  initialToken?: string;
+}): VNode => {
+  const value = useBackendContextState(defaultUrl, initialToken);
 
   return h(BackendContext.Provider, { value, children });
-}
+};
 
-export const useBackendContext = (): BackendContextType => useContext(BackendContext);
+export const useBackendContext = (): BackendContextType =>
+  useContext(BackendContext);

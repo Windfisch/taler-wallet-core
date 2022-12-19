@@ -15,68 +15,76 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h } from 'preact';
+import { h } from "preact";
 import { View } from "./View.js";
 
-
 export default {
-  title: 'Pages/Instance/List',
+  title: "Pages/Instance/List",
   component: View,
   argTypes: {
-    onSelect: { action: 'onSelect' },
+    onSelect: { action: "onSelect" },
   },
 };
 
 export const Empty = (a: any) => <View {...a} />;
 Empty.args = {
-  instances: []
-}
+  instances: [],
+};
 
 export const WithDefaultInstance = (a: any) => <View {...a} />;
 WithDefaultInstance.args = {
-  instances: [{
-    id: 'default',
-    name: 'the default instance',
-    merchant_pub: 'abcdef',
-    payment_targets: []
-  }]
-}
+  instances: [
+    {
+      id: "default",
+      name: "the default instance",
+      merchant_pub: "abcdef",
+      payment_targets: [],
+    },
+  ],
+};
 
 export const WithFiveInstance = (a: any) => <View {...a} />;
 WithFiveInstance.args = {
-  instances: [{
-    id: 'first',
-    name: 'the first instance',
-    merchant_pub: 'abcdefgh',
-    payment_targets: ['asd']
-  }, {
-    id: 'second',
-    name: 'the second instance',
-    merchant_pub: 'zxczxcz',
-    payment_targets: ['asd']
-  }, {
-    id: 'third',
-    name: 'the third instance',
-    merchant_pub: 'QWEQWEWQE',
-    payment_targets: ['asd']
-  }, {
-    id: 'other',
-    name: 'the other instance',
-    merchant_pub: 'FHJHGJGHJ',
-    payment_targets: ['asd']
-  }, {
-    id: 'another',
-    name: 'the another instance',
-    merchant_pub: 'abcd3423423efgh',
-    payment_targets: ['asd']
-  }, {
-    id: 'last',
-    name: 'last instance',
-    merchant_pub: 'zxcvvbnm',
-    payment_targets: ['pay-to', 'asd']
-  }]
-}
+  instances: [
+    {
+      id: "first",
+      name: "the first instance",
+      merchant_pub: "abcdefgh",
+      payment_targets: ["asd"],
+    },
+    {
+      id: "second",
+      name: "the second instance",
+      merchant_pub: "zxczxcz",
+      payment_targets: ["asd"],
+    },
+    {
+      id: "third",
+      name: "the third instance",
+      merchant_pub: "QWEQWEWQE",
+      payment_targets: ["asd"],
+    },
+    {
+      id: "other",
+      name: "the other instance",
+      merchant_pub: "FHJHGJGHJ",
+      payment_targets: ["asd"],
+    },
+    {
+      id: "another",
+      name: "the another instance",
+      merchant_pub: "abcd3423423efgh",
+      payment_targets: ["asd"],
+    },
+    {
+      id: "last",
+      name: "last instance",
+      merchant_pub: "zxcvvbnm",
+      payment_targets: ["pay-to", "asd"],
+    },
+  ],
+};

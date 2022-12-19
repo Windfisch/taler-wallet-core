@@ -15,12 +15,12 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { Fragment, h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
+import { Fragment, h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { Loading } from "../../../../components/exception/loading.js";
 import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
@@ -33,9 +33,9 @@ import { CreatePage } from "./CreatePage.js";
 import { OrderCreatedSuccessfully } from "./OrderCreatedSuccessfully.js";
 
 export type Entity = {
-  request: MerchantBackend.Orders.PostOrderRequest,
-  response: MerchantBackend.Orders.PostOrderResponse
-}
+  request: MerchantBackend.Orders.PostOrderRequest;
+  response: MerchantBackend.Orders.PostOrderResponse;
+};
 interface Props {
   onBack?: () => void;
   onConfirm: () => void;
@@ -43,40 +43,53 @@ interface Props {
   onNotFound: () => VNode;
   onLoadError: (error: HttpError) => VNode;
 }
-export default function OrderCreate({ onConfirm, onBack, onLoadError, onNotFound, onUnauthorized }: Props): VNode {
-  const { createOrder } = useOrderAPI()
-  const [notif, setNotif] = useState<Notification | undefined>(undefined)
+export default function OrderCreate({
+  onConfirm,
+  onBack,
+  onLoadError,
+  onNotFound,
+  onUnauthorized,
+}: Props): VNode {
+  const { createOrder } = useOrderAPI();
+  const [notif, setNotif] = useState<Notification | undefined>(undefined);
 
-  const detailsResult = useInstanceDetails()
-  const inventoryResult = useInstanceProducts()
+  const detailsResult = useInstanceDetails();
+  const inventoryResult = useInstanceProducts();
 
-  if (detailsResult.clientError && detailsResult.isUnauthorized) return onUnauthorized()
-  if (detailsResult.clientError && detailsResult.isNotfound) return onNotFound()
-  if (detailsResult.loading) return <Loading />
-  if (!detailsResult.ok) return onLoadError(detailsResult)
+  if (detailsResult.clientError && detailsResult.isUnauthorized)
+    return onUnauthorized();
+  if (detailsResult.clientError && detailsResult.isNotfound)
+    return onNotFound();
+  if (detailsResult.loading) return <Loading />;
+  if (!detailsResult.ok) return onLoadError(detailsResult);
 
-  if (inventoryResult.clientError && inventoryResult.isUnauthorized) return onUnauthorized()
-  if (inventoryResult.clientError && inventoryResult.isNotfound) return onNotFound()
-  if (inventoryResult.loading) return <Loading />
-  if (!inventoryResult.ok) return onLoadError(inventoryResult)
+  if (inventoryResult.clientError && inventoryResult.isUnauthorized)
+    return onUnauthorized();
+  if (inventoryResult.clientError && inventoryResult.isNotfound)
+    return onNotFound();
+  if (inventoryResult.loading) return <Loading />;
+  if (!inventoryResult.ok) return onLoadError(inventoryResult);
 
-  return <Fragment>
-    
-    <NotificationCard notification={notif} />
+  return (
+    <Fragment>
+      <NotificationCard notification={notif} />
 
-    <CreatePage
-      onBack={onBack}
-      onCreate={(request: MerchantBackend.Orders.PostOrderRequest) => {
-        createOrder(request).then(onConfirm).catch((error) => {
-          setNotif({
-            message: 'could not create order',
-            type: "ERROR",
-            description: error.message
-          })
-        })
-      }} 
-      instanceConfig={detailsResult.data}
-      instanceInventory={inventoryResult.data}
+      <CreatePage
+        onBack={onBack}
+        onCreate={(request: MerchantBackend.Orders.PostOrderRequest) => {
+          createOrder(request)
+            .then(onConfirm)
+            .catch((error) => {
+              setNotif({
+                message: "could not create order",
+                type: "ERROR",
+                description: error.message,
+              });
+            });
+        }}
+        instanceConfig={detailsResult.data}
+        instanceInventory={inventoryResult.data}
       />
-  </Fragment>
+    </Fragment>
+  );
 }

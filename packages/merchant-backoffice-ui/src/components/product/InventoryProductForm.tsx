@@ -23,24 +23,32 @@ import { Translate, useTranslator } from "../../i18n/index.js";
 import { ProductMap } from "../../paths/instance/orders/create/CreatePage.js";
 
 type Form = {
-  product: MerchantBackend.Products.ProductDetail & WithId,
+  product: MerchantBackend.Products.ProductDetail & WithId;
   quantity: number;
-}
+};
 
 interface Props {
-  currentProducts: ProductMap,
-  onAddProduct: (product: MerchantBackend.Products.ProductDetail & WithId, quantity: number) => void,
-  inventory: (MerchantBackend.Products.ProductDetail & WithId)[],
+  currentProducts: ProductMap;
+  onAddProduct: (
+    product: MerchantBackend.Products.ProductDetail & WithId,
+    quantity: number,
+  ) => void;
+  inventory: (MerchantBackend.Products.ProductDetail & WithId)[];
 }
 
-export function InventoryProductForm({ currentProducts, onAddProduct, inventory }: Props): VNode {
-  const initialState = { quantity: 1 }
-  const [state, setState] = useState<Partial<Form>>(initialState)
-  const [errors, setErrors] = useState<FormErrors<Form>>({})
+export function InventoryProductForm({
+  currentProducts,
+  onAddProduct,
+  inventory,
+}: Props): VNode {
+  const initialState = { quantity: 1 };
+  const [state, setState] = useState<Partial<Form>>(initialState);
+  const [errors, setErrors] = useState<FormErrors<Form>>({});
 
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
-  const productWithInfiniteStock = state.product && state.product.total_stock === -1
+  const productWithInfiniteStock =
+    state.product && state.product.total_stock === -1;
 
   const submit = (): void => {
     if (!state.product) {
@@ -48,48 +56,68 @@ export function InventoryProductForm({ currentProducts, onAddProduct, inventory 
       return;
     }
     if (productWithInfiniteStock) {
-      onAddProduct(state.product, 1)
+      onAddProduct(state.product, 1);
     } else {
       if (!state.quantity || state.quantity <= 0) {
         setErrors({ quantity: i18n`Quantity must be greater than 0!` });
         return;
       }
-      const currentStock = state.product.total_stock - state.product.total_lost - state.product.total_sold
-      const p = currentProducts[state.product.id]
+      const currentStock =
+        state.product.total_stock -
+        state.product.total_lost -
+        state.product.total_sold;
+      const p = currentProducts[state.product.id];
       if (p) {
         if (state.quantity + p.quantity > currentStock) {
           const left = currentStock - p.quantity;
-          setErrors({ quantity: i18n`This quantity exceeds remaining stock. Currently, only ${left} units remain unreserved in stock.` });
+          setErrors({
+            quantity: i18n`This quantity exceeds remaining stock. Currently, only ${left} units remain unreserved in stock.`,
+          });
           return;
         }
-        onAddProduct(state.product, state.quantity + p.quantity)
+        onAddProduct(state.product, state.quantity + p.quantity);
       } else {
         if (state.quantity > currentStock) {
           const left = currentStock;
-          setErrors({ quantity: i18n`This quantity exceeds remaining stock. Currently, only ${left} units remain unreserved in stock.` });
+          setErrors({
+            quantity: i18n`This quantity exceeds remaining stock. Currently, only ${left} units remain unreserved in stock.`,
+          });
           return;
         }
-        onAddProduct(state.product, state.quantity)
+        onAddProduct(state.product, state.quantity);
       }
     }
 
-    setState(initialState)
-  }
+    setState(initialState);
+  };
 
-  return <FormProvider<Form> errors={errors} object={state} valueHandler={setState}>
-    <InputSearchProduct selected={state.product} onChange={(p) => setState(v => ({ ...v, product: p }))} products={inventory} />
-    { state.product && <div class="columns mt-5">
-      <div class="column is-two-thirds">
-        {!productWithInfiniteStock &&
-          <InputNumber<Form> name="quantity" label={i18n`Quantity`} tooltip={i18n`how many products will be added`} />
-        }
-      </div>
-      <div class="column">
-        <div class="buttons is-right">
-          <button class="button is-success" onClick={submit}><Translate>Add from inventory</Translate></button>
+  return (
+    <FormProvider<Form> errors={errors} object={state} valueHandler={setState}>
+      <InputSearchProduct
+        selected={state.product}
+        onChange={(p) => setState((v) => ({ ...v, product: p }))}
+        products={inventory}
+      />
+      {state.product && (
+        <div class="columns mt-5">
+          <div class="column is-two-thirds">
+            {!productWithInfiniteStock && (
+              <InputNumber<Form>
+                name="quantity"
+                label={i18n`Quantity`}
+                tooltip={i18n`how many products will be added`}
+              />
+            )}
+          </div>
+          <div class="column">
+            <div class="buttons is-right">
+              <button class="button is-success" onClick={submit}>
+                <Translate>Add from inventory</Translate>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div> }
-
-  </FormProvider>
+      )}
+    </FormProvider>
+  );
 }

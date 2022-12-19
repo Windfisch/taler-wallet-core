@@ -29,7 +29,10 @@ import { Input } from "../../../../components/form/Input.js";
 import { InputCurrency } from "../../../../components/form/InputCurrency.js";
 import { InputDate } from "../../../../components/form/InputDate.js";
 import { TextField } from "../../../../components/form/TextField.js";
-import { ContinueModal, SimpleModal } from "../../../../components/modal/index.js";
+import {
+  ContinueModal,
+  SimpleModal,
+} from "../../../../components/modal/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { useTipDetails } from "../../../../hooks/reserves.js";
 import { Translate, useTranslator } from "../../../../i18n/index.js";
@@ -47,7 +50,7 @@ interface Props {
 export function DetailPage({ id, selected, onBack }: Props): VNode {
   const i18n = useTranslator();
   const didExchangeAckTransfer = Amounts.isNonZero(
-    Amounts.parseOrThrow(selected.exchange_initial_amount)
+    Amounts.parseOrThrow(selected.exchange_initial_amount),
   );
   const link = `${selected.payto_uri}?message=${id}&amount=${selected.merchant_initial_amount}`;
 

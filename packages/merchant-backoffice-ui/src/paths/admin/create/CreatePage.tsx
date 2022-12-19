@@ -76,7 +76,7 @@ export function CreatePage({ onCreate, onBack, forceId }: Props): VNode {
         : undefinedIfEmpty(
             value.payto_uris.map((p) => {
               return !PAYTO_REGEX.test(p) ? i18n`is not valid` : undefined;
-            })
+            }),
           ),
     default_max_deposit_fee: !value.default_max_deposit_fee
       ? i18n`required`
@@ -115,7 +115,7 @@ export function CreatePage({ onCreate, onBack, forceId }: Props): VNode {
   };
 
   const hasErrors = Object.keys(errors).some(
-    (k) => (errors as any)[k] !== undefined
+    (k) => (errors as any)[k] !== undefined,
   );
 
   const submit = (): Promise<void> => {

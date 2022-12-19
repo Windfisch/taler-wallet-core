@@ -173,7 +173,7 @@ function Table({
                     ? "never"
                     : format(
                         new Date(i.timestamp.t_s * 1000),
-                        "yyyy/MM/dd HH:mm:ss"
+                        "yyyy/MM/dd HH:mm:ss",
                       )}
                 </td>
                 <td
@@ -268,7 +268,7 @@ export function RefundModal({
     .map((r) => r.amount)
     .reduce(
       (p, c) => Amounts.add(p, Amounts.parseOrThrow(c)).amount,
-      Amounts.zeroOfCurrency(config.currency)
+      Amounts.zeroOfCurrency(config.currency),
     );
   const orderPrice =
     order.order_status === "paid"
@@ -298,7 +298,7 @@ export function RefundModal({
       : undefined,
   };
   const hasErrors = Object.keys(errors).some(
-    (k) => (errors as any)[k] !== undefined
+    (k) => (errors as any)[k] !== undefined,
   );
 
   const validateAndConfirm = () => {
@@ -306,7 +306,7 @@ export function RefundModal({
       if (!form.refund) return;
       onConfirm({
         refund: Amounts.stringify(
-          Amounts.add(Amounts.parse(form.refund)!, totalRefunded).amount
+          Amounts.add(Amounts.parse(form.refund)!, totalRefunded).amount,
         ),
         reason:
           form.description === undefined
@@ -358,7 +358,7 @@ export function RefundModal({
                             ? "never"
                             : format(
                                 new Date(r.timestamp.t_s * 1000),
-                                "yyyy-MM-dd HH:mm:ss"
+                                "yyyy-MM-dd HH:mm:ss",
                               )}
                         </td>
                         <td>{r.amount}</td>

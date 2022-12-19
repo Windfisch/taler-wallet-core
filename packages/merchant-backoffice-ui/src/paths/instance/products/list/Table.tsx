@@ -41,7 +41,7 @@ interface Props {
   onSelect: (product: Entity) => void;
   onUpdate: (
     id: string,
-    data: MerchantBackend.Products.ProductPatchDetail
+    data: MerchantBackend.Products.ProductPatchDetail,
   ) => Promise<void>;
   onCreate: () => void;
   selected?: boolean;
@@ -55,7 +55,7 @@ export function CardTable({
   onDelete,
 }: Props): VNode {
   const [rowSelection, rowSelectionHandler] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const i18n = useTranslator();
   return (
@@ -107,7 +107,7 @@ interface TableProps {
   onSelect: (id: Entity) => void;
   onUpdate: (
     id: string,
-    data: MerchantBackend.Products.ProductPatchDetail
+    data: MerchantBackend.Products.ProductPatchDetail,
   ) => Promise<void>;
   onDelete: (id: Entity) => void;
   rowSelectionHandler: StateUpdater<string | undefined>;
@@ -159,7 +159,7 @@ function Table({
               ? "never"
               : `restock at ${format(
                   new Date(i.next_restock.t_s * 1000),
-                  "yyyy/MM/dd"
+                  "yyyy/MM/dd",
                 )}`;
             let stockInfo: ComponentChildren = "";
             if (i.total_stock < 0) {
@@ -277,7 +277,7 @@ function Table({
                         product={i}
                         onUpdate={(prod) =>
                           onUpdate(i.id, prod).then((r) =>
-                            rowSelectionHandler(undefined)
+                            rowSelectionHandler(undefined),
                           )
                         }
                         onCancel={() => rowSelectionHandler(undefined)}
@@ -297,7 +297,7 @@ function Table({
 interface FastProductUpdateFormProps {
   product: Entity;
   onUpdate: (
-    data: MerchantBackend.Products.ProductPatchDetail
+    data: MerchantBackend.Products.ProductPatchDetail,
   ) => Promise<void>;
   onCancel: () => void;
 }
@@ -381,7 +381,7 @@ function FastProductWithManagedStockUpdateForm({
   };
 
   const hasErrors = Object.keys(errors).some(
-    (k) => (errors as any)[k] !== undefined
+    (k) => (errors as any)[k] !== undefined,
   );
   const i18n = useTranslator();
 

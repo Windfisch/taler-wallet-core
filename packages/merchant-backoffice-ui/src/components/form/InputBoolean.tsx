@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { h, VNode } from "preact";
 import { InputProps, useField } from "./useField.js";
 
@@ -30,43 +30,62 @@ interface Props<T> extends InputProps<T> {
   fromBoolean?: (s: boolean | undefined) => any;
 }
 
-const defaultToBoolean = (f?: any): boolean | undefined => f || ''
-const defaultFromBoolean = (v: boolean | undefined): any => v as any
+const defaultToBoolean = (f?: any): boolean | undefined => f || "";
+const defaultFromBoolean = (v: boolean | undefined): any => v as any;
 
-
-export function InputBoolean<T>({ name, readonly, placeholder, tooltip, label, help, threeState, expand, fromBoolean = defaultFromBoolean, toBoolean = defaultToBoolean }: Props<keyof T>): VNode {
+export function InputBoolean<T>({
+  name,
+  readonly,
+  placeholder,
+  tooltip,
+  label,
+  help,
+  threeState,
+  expand,
+  fromBoolean = defaultFromBoolean,
+  toBoolean = defaultToBoolean,
+}: Props<keyof T>): VNode {
   const { error, value, onChange } = useField<T>(name);
 
   const onCheckboxClick = (): void => {
-    const c = toBoolean(value)
-    if (c === false && threeState) return onChange(undefined as any)
-    return onChange(fromBoolean(!c))
-  }
+    const c = toBoolean(value);
+    if (c === false && threeState) return onChange(undefined as any);
+    return onChange(fromBoolean(!c));
+  };
 
-  return <div class="field is-horizontal">
-    <div class="field-label is-normal">
-      <label class="label">
-        {label}
-        {tooltip && <span class="icon has-tooltip-right" data-tooltip={tooltip}>
-          <i class="mdi mdi-information" />
-        </span>}
-      </label>
-    </div>
-    <div class="field-body is-flex-grow-3">
-      <div class="field">
-        <p class={expand ? "control is-expanded" : "control"}>
-          <label class="b-checkbox checkbox">
-            <input type="checkbox" class={toBoolean(value) === undefined ? "is-indeterminate" : ""}
-              checked={toBoolean(value)}
-              placeholder={placeholder} readonly={readonly}
-              name={String(name)} disabled={readonly}
-              onChange={onCheckboxClick} />
-            <span class="check" />
-          </label>
-          {help}
-        </p>
-        {error && <p class="help is-danger">{error}</p>}
+  return (
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label class="label">
+          {label}
+          {tooltip && (
+            <span class="icon has-tooltip-right" data-tooltip={tooltip}>
+              <i class="mdi mdi-information" />
+            </span>
+          )}
+        </label>
+      </div>
+      <div class="field-body is-flex-grow-3">
+        <div class="field">
+          <p class={expand ? "control is-expanded" : "control"}>
+            <label class="b-checkbox checkbox">
+              <input
+                type="checkbox"
+                class={toBoolean(value) === undefined ? "is-indeterminate" : ""}
+                checked={toBoolean(value)}
+                placeholder={placeholder}
+                readonly={readonly}
+                name={String(name)}
+                disabled={readonly}
+                onChange={onCheckboxClick}
+              />
+              <span class="check" />
+            </label>
+            {help}
+          </p>
+          {error && <p class="help is-danger">{error}</p>}
+        </div>
       </div>
     </div>
-  </div>;
+  );
 }

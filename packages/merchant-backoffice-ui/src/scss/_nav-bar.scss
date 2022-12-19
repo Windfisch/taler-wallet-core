@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
+/**
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
@@ -25,7 +25,7 @@ nav.navbar {
   .navbar-item {
     &.has-user-avatar {
       .is-user-avatar {
-        margin-right: $default-padding * .5;
+        margin-right: $default-padding * 0.5;
         display: inline-flex;
         width: $navbar-avatar-size;
         height: $navbar-avatar-size;
@@ -98,11 +98,11 @@ nav.navbar {
 
       .navbar-item {
         .icon:first-child {
-          margin-right: $default-padding * .5;
+          margin-right: $default-padding * 0.5;
         }
 
         &.has-dropdown {
-          >.navbar-link {
+          > .navbar-link {
             background-color: $white-ter;
             .icon:last-child {
               display: none;
@@ -111,11 +111,11 @@ nav.navbar {
         }
 
         &.has-user-avatar {
-          >.navbar-link {
+          > .navbar-link {
             display: flex;
             align-items: center;
-            padding-top: $default-padding * .5;
-            padding-bottom: $default-padding * .5;
+            padding-top: $default-padding * 0.5;
+            padding-bottom: $default-padding * 0.5;
           }
         }
       }
@@ -131,7 +131,7 @@ nav.navbar {
 
       &:not(.is-desktop-icon-only) {
         .icon:first-child {
-          margin-right: $default-padding * .5;
+          margin-right: $default-padding * 0.5;
         }
       }
       &.is-desktop-icon-only {

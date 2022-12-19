@@ -13,7 +13,11 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { amountFractionalBase, AmountJson, Amounts } from "@gnu-taler/taler-util";
+import {
+  amountFractionalBase,
+  AmountJson,
+  Amounts,
+} from "@gnu-taler/taler-util";
 import { MerchantBackend } from "../declaration.js";
 
 /**
@@ -23,10 +27,10 @@ import { MerchantBackend } from "../declaration.js";
  * @returns
  */
 const sumPrices = (one: string, two: string) => {
-  const [currency, valueOne] = one.split(':')
-  const [, valueTwo] = two.split(':')
-  return `${currency}:${parseInt(valueOne, 10) + parseInt(valueTwo, 10)}`
-}
+  const [currency, valueOne] = one.split(":");
+  const [, valueTwo] = two.split(":");
+  return `${currency}:${parseInt(valueOne, 10) + parseInt(valueTwo, 10)}`;
+};
 
 /**
  * merge refund with the same description and a difference less than one minute
@@ -34,37 +38,43 @@ const sumPrices = (one: string, two: string) => {
  * @param cur new refund to add to the list
  * @returns list with the new refund, may be merged with the last
  */
-export function mergeRefunds(prev: MerchantBackend.Orders.RefundDetails[], cur: MerchantBackend.Orders.RefundDetails) {
+export function mergeRefunds(
+  prev: MerchantBackend.Orders.RefundDetails[],
+  cur: MerchantBackend.Orders.RefundDetails,
+) {
   let tail;
 
-  if (prev.length === 0 ||  //empty list
-    cur.timestamp.t_s === 'never' || //current does not have timestamp
-    (tail = prev[prev.length - 1]).timestamp.t_s === 'never' || // last does not have timestamp
+  if (
+    prev.length === 0 || //empty list
+    cur.timestamp.t_s === "never" || //current does not have timestamp
+    (tail = prev[prev.length - 1]).timestamp.t_s === "never" || // last does not have timestamp
     cur.reason !== tail.reason || //different reason
     cur.pending !== tail.pending || //different pending state
-    Math.abs(cur.timestamp.t_s - tail.timestamp.t_s) > 1000 * 60) {//more than 1 minute difference
+    Math.abs(cur.timestamp.t_s - tail.timestamp.t_s) > 1000 * 60
+  ) {
+    //more than 1 minute difference
 
-    prev.push(cur)
-    return prev
+    prev.push(cur);
+    return prev;
   }
 
   prev[prev.length - 1] = {
     ...tail,
-    amount: sumPrices(tail.amount, cur.amount)
-  }
+    amount: sumPrices(tail.amount, cur.amount),
+  };
 
-  return prev
+  return prev;
 }
 
 export const rate = (one: string, two: string) => {
-  const a = Amounts.parseOrThrow(one)
-  const b = Amounts.parseOrThrow(two)
-  const af = toFloat(a)
-  const bf = toFloat(b)
-  if (bf === 0) return 0
-  return af / bf
-}
+  const a = Amounts.parseOrThrow(one);
+  const b = Amounts.parseOrThrow(two);
+  const af = toFloat(a);
+  const bf = toFloat(b);
+  if (bf === 0) return 0;
+  return af / bf;
+};
 
 function toFloat(amount: AmountJson) {
-  return amount.value + (amount.fraction / amountFractionalBase);
+  return amount.value + amount.fraction / amountFractionalBase;
 }

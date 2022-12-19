@@ -15,36 +15,41 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, FunctionalComponent } from 'preact';
-import { useState } from 'preact/hooks';
+import { h, FunctionalComponent } from "preact";
+import { useState } from "preact/hooks";
 import { DurationPicker as TestedComponent } from "./DurationPicker.js";
 
-
 export default {
-  title: 'Components/Picker/Duration',
+  title: "Components/Picker/Duration",
   component: TestedComponent,
   argTypes: {
-    onCreate: { action: 'onCreate' },
-    goBack: { action: 'goBack' },
-  }
+    onCreate: { action: "onCreate" },
+    goBack: { action: "goBack" },
+  },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
 export const Example = createExample(TestedComponent, {
-  days: true, minutes: true, hours: true, seconds: true,
-  value: 10000000
+  days: true,
+  minutes: true,
+  hours: true,
+  seconds: true,
+  value: 10000000,
 });
 
 export const WithState = () => {
-  const [v,s] = useState<number>(1000000)
-  return <TestedComponent value={v} onChange={s} days minutes hours seconds />
-}
+  const [v, s] = useState<number>(1000000);
+  return <TestedComponent value={v} onChange={s} days minutes hours seconds />;
+};

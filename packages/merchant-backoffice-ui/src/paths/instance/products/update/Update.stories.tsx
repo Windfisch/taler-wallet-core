@@ -15,57 +15,59 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, FunctionalComponent } from 'preact';
+import { h, VNode, FunctionalComponent } from "preact";
 import { UpdatePage as TestedComponent } from "./UpdatePage.js";
 
-
 export default {
-  title: 'Pages/Product/Update',
+  title: "Pages/Product/Update",
   component: TestedComponent,
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
 export const WithManagedStock = createExample(TestedComponent, {
   product: {
-    product_id: '20102-ASDAS-QWE',
-    description: 'description1',
+    product_id: "20102-ASDAS-QWE",
+    description: "description1",
     description_i18n: {} as any,
-    image: '',
-    price: 'TESTKUDOS:10',
+    image: "",
+    price: "TESTKUDOS:10",
     taxes: [],
     total_lost: 10,
     total_sold: 5,
     total_stock: 15,
-    unit: 'bar',
-    address: {}
-  }
+    unit: "bar",
+    address: {},
+  },
 });
 
 export const WithInfiniteStock = createExample(TestedComponent, {
   product: {
-    product_id: '20102-ASDAS-QWE',
-    description: 'description1',
+    product_id: "20102-ASDAS-QWE",
+    description: "description1",
     description_i18n: {} as any,
-    image: '',
-    price: 'TESTKUDOS:10',
+    image: "",
+    price: "TESTKUDOS:10",
     taxes: [],
     total_lost: 10,
     total_sold: 5,
     total_stock: -1,
-    unit: 'bar',
-    address: {}
-  }
+    unit: "bar",
+    address: {},
+  },
 });

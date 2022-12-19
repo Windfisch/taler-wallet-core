@@ -43,7 +43,7 @@ export default {
 
 function createExample<Props>(
   Component: FunctionalComponent<Props>,
-  props: Partial<Props>
+  props: Partial<Props>,
 ) {
   const r = (args: any) => <Component {...args} />;
   r.args = props;

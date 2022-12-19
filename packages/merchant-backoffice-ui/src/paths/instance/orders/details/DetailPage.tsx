@@ -248,7 +248,7 @@ function ClaimedPage({
                           </b>{" "}
                           {format(
                             new Date(order.contract_terms.timestamp.t_s * 1000),
-                            "yyyy-MM-dd HH:mm:ss"
+                            "yyyy-MM-dd HH:mm:ss",
                           )}
                         </p>
                       </div>
@@ -519,7 +519,7 @@ function PaidPage({
                         <p>
                           {format(
                             new Date(order.contract_terms.timestamp.t_s * 1000),
-                            "yyyy/MM/dd HH:mm:ss"
+                            "yyyy/MM/dd HH:mm:ss",
                           )}
                         </p>
                       </div>
@@ -669,7 +669,7 @@ function UnpaidPage({
                       ? "never"
                       : format(
                           new Date(order.creation_time.t_s * 1000),
-                          "yyyy-MM-dd HH:mm:ss"
+                          "yyyy-MM-dd HH:mm:ss",
                         )}
                   </p>
                 </div>

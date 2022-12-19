@@ -15,44 +15,48 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, FunctionalComponent } from 'preact';
+import { h, VNode, FunctionalComponent } from "preact";
 import { InventoryProductForm as TestedComponent } from "./InventoryProductForm.js";
 
-
 export default {
-  title: 'Components/Product/Add',
+  title: "Components/Product/Add",
   component: TestedComponent,
   argTypes: {
-    onAddProduct: { action: 'onAddProduct' },
+    onAddProduct: { action: "onAddProduct" },
   },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
 export const WithASimpleList = createExample(TestedComponent, {
-  inventory:[{
-    id: 'this id',
-    description: 'this is the description',
-  } as any]
+  inventory: [
+    {
+      id: "this id",
+      description: "this is the description",
+    } as any,
+  ],
 });
 
 export const WithAProductSelected = createExample(TestedComponent, {
-  inventory:[],
+  inventory: [],
   currentProducts: {
     thisid: {
       quantity: 1,
       product: {
-        id: 'asd',
-        description: 'asdsadsad',
-      } as any
-    }
-  }
+        id: "asd",
+        description: "asdsadsad",
+      } as any,
+    },
+  },
 });

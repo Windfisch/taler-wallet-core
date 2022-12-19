@@ -15,43 +15,48 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h } from 'preact';
+import { h } from "preact";
 import { Notifications } from "./index.js";
 
-
 export default {
-  title: 'Components/Notification',
+  title: "Components/Notification",
   component: Notifications,
   argTypes: {
-    removeNotification: { action: 'removeNotification' },
+    removeNotification: { action: "removeNotification" },
   },
 };
 
 export const Info = (a: any) => <Notifications {...a} />;
 Info.args = {
-  notifications: [{
-    message: 'Title',
-    description: 'Some large description',
-    type: 'INFO',
-  }]
-}
+  notifications: [
+    {
+      message: "Title",
+      description: "Some large description",
+      type: "INFO",
+    },
+  ],
+};
 export const Warn = (a: any) => <Notifications {...a} />;
 Warn.args = {
-  notifications: [{
-    message: 'Title',
-    description: 'Some large description',
-    type: 'WARN',
-  }]
-}
+  notifications: [
+    {
+      message: "Title",
+      description: "Some large description",
+      type: "WARN",
+    },
+  ],
+};
 export const Error = (a: any) => <Notifications {...a} />;
 Error.args = {
-  notifications: [{
-    message: 'Title',
-    description: 'Some large description',
-    type: 'ERROR',
-  }]
-}
+  notifications: [
+    {
+      message: "Title",
+      description: "Some large description",
+      type: "ERROR",
+    },
+  ],
+};

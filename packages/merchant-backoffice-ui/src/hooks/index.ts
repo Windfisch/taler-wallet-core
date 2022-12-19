@@ -15,81 +15,109 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { StateUpdater, useCallback, useState } from "preact/hooks";
 import { ValueOrFunction } from "../utils/types.js";
 
-
 const calculateRootPath = () => {
-  const rootPath = typeof window !== undefined ? window.location.origin + window.location.pathname : '/'
-  return rootPath
-}
+  const rootPath =
+    typeof window !== undefined
+      ? window.location.origin + window.location.pathname
+      : "/";
+  return rootPath;
+};
 
-export function useBackendURL(url?: string): [string, boolean, StateUpdater<string>, () => void] {
-  const [value, setter] = useNotNullLocalStorage('backend-url', url || calculateRootPath())
-  const [triedToLog, setTriedToLog] = useLocalStorage('tried-login')
+export function useBackendURL(
+  url?: string,
+): [string, boolean, StateUpdater<string>, () => void] {
+  const [value, setter] = useNotNullLocalStorage(
+    "backend-url",
+    url || calculateRootPath(),
+  );
+  const [triedToLog, setTriedToLog] = useLocalStorage("tried-login");
 
   const checkedSetter = (v: ValueOrFunction<string>) => {
-    setTriedToLog('yes')
-    return setter(p => (v instanceof Function ? v(p) : v).replace(/\/$/, ''))
-  }
+    setTriedToLog("yes");
+    return setter((p) => (v instanceof Function ? v(p) : v).replace(/\/$/, ""));
+  };
 
   const resetBackend = () => {
-    setTriedToLog(undefined)
-  }
-  return [value, !!triedToLog, checkedSetter, resetBackend]
+    setTriedToLog(undefined);
+  };
+  return [value, !!triedToLog, checkedSetter, resetBackend];
 }
 
-export function useBackendDefaultToken(initialValue?: string): [string | undefined, StateUpdater<string | undefined>] {
-  return useLocalStorage('backend-token', initialValue)
+export function useBackendDefaultToken(
+  initialValue?: string,
+): [string | undefined, StateUpdater<string | undefined>] {
+  return useLocalStorage("backend-token", initialValue);
 }
 
-export function useBackendInstanceToken(id: string): [string | undefined, StateUpdater<string | undefined>] {
-  const [token, setToken] = useLocalStorage(`backend-token-${id}`)
-  const [defaultToken, defaultSetToken] = useBackendDefaultToken()
+export function useBackendInstanceToken(
+  id: string,
+): [string | undefined, StateUpdater<string | undefined>] {
+  const [token, setToken] = useLocalStorage(`backend-token-${id}`);
+  const [defaultToken, defaultSetToken] = useBackendDefaultToken();
 
   // instance named 'default' use the default token
-  if (id === 'default') {
-    return [defaultToken, defaultSetToken]
+  if (id === "default") {
+    return [defaultToken, defaultSetToken];
   }
 
-  return [token, setToken]
+  return [token, setToken];
 }
 
 export function useLang(initial?: string): [string, StateUpdater<string>] {
-  const browserLang = typeof window !== "undefined" ? navigator.language || (navigator as any).userLanguage : undefined;
-  const defaultLang = (browserLang || initial || 'en').substring(0, 2)
-  return useNotNullLocalStorage('lang-preference', defaultLang)
+  const browserLang =
+    typeof window !== "undefined"
+      ? navigator.language || (navigator as any).userLanguage
+      : undefined;
+  const defaultLang = (browserLang || initial || "en").substring(0, 2);
+  return useNotNullLocalStorage("lang-preference", defaultLang);
 }
 
-export function useLocalStorage(key: string, initialValue?: string): [string | undefined, StateUpdater<string | undefined>] {
-  const [storedValue, setStoredValue] = useState<string | undefined>((): string | undefined => {
-    return typeof window !== "undefined" ? window.localStorage.getItem(key) || initialValue : initialValue;
-  });
+export function useLocalStorage(
+  key: string,
+  initialValue?: string,
+): [string | undefined, StateUpdater<string | undefined>] {
+  const [storedValue, setStoredValue] = useState<string | undefined>(
+    (): string | undefined => {
+      return typeof window !== "undefined"
+        ? window.localStorage.getItem(key) || initialValue
+        : initialValue;
+    },
+  );
 
-  const setValue = (value?: string | ((val?: string) => string | undefined)) => {
-    setStoredValue(p => {
-      const toStore = value instanceof Function ? value(p) : value
+  const setValue = (
+    value?: string | ((val?: string) => string | undefined),
+  ) => {
+    setStoredValue((p) => {
+      const toStore = value instanceof Function ? value(p) : value;
       if (typeof window !== "undefined") {
         if (!toStore) {
-          window.localStorage.removeItem(key)
+          window.localStorage.removeItem(key);
         } else {
           window.localStorage.setItem(key, toStore);
         }
       }
-      return toStore
-    })
+      return toStore;
+    });
   };
 
   return [storedValue, setValue];
 }
 
-export function useNotNullLocalStorage(key: string, initialValue: string): [string, StateUpdater<string>] {
+export function useNotNullLocalStorage(
+  key: string,
+  initialValue: string,
+): [string, StateUpdater<string>] {
   const [storedValue, setStoredValue] = useState<string>((): string => {
-    return typeof window !== "undefined" ? window.localStorage.getItem(key) || initialValue : initialValue;
+    return typeof window !== "undefined"
+      ? window.localStorage.getItem(key) || initialValue
+      : initialValue;
   });
 
   const setValue = (value: string | ((val: string) => string)) => {
@@ -97,7 +125,7 @@ export function useNotNullLocalStorage(key: string, initialValue: string): [stri
     setStoredValue(valueToStore);
     if (typeof window !== "undefined") {
       if (!valueToStore) {
-        window.localStorage.removeItem(key)
+        window.localStorage.removeItem(key);
       } else {
         window.localStorage.setItem(key, valueToStore);
       }
@@ -106,5 +134,3 @@ export function useNotNullLocalStorage(key: string, initialValue: string): [stri
 
   return [storedValue, setValue];
 }
-
-

@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { useState } from "preact/hooks";
 
@@ -26,25 +26,27 @@ import { useState } from "preact/hooks";
  * an action (a button) and other child have the action implemented (like
  * gathering information with a form). The difference with other approaches is
  * that in this case the parent component is not holding the state.
- * 
- * It will return a subscriber and activator. 
- * 
+ *
+ * It will return a subscriber and activator.
+ *
  * The activator may be undefined, if it is undefined it is indicating that the
  * subscriber is not ready to be called.
  *
  * The subscriber will receive a function (the listener) that will be call when the
  * activator runs. The listener must return the collected information.
- * 
+ *
  * As a result, when the activator is triggered by a child component, the
  * @action function is called receives the information from the listener defined by other
- * child component 
+ * child component
  *
  * @param action from <T> to <R>
  * @returns activator and subscriber, undefined activator means that there is not subscriber
  */
 
-export function useListener<T, R = any>(action: (r: T) => Promise<R>): [undefined | (() => Promise<R>), (listener?: () => T) => void] {
-  type RunnerHandler = { toBeRan?: () => Promise<R>; };
+export function useListener<T, R = any>(
+  action: (r: T) => Promise<R>,
+): [undefined | (() => Promise<R>), (listener?: () => T) => void] {
+  type RunnerHandler = { toBeRan?: () => Promise<R> };
   const [state, setState] = useState<RunnerHandler>({});
 
   /**
@@ -58,24 +60,26 @@ export function useListener<T, R = any>(action: (r: T) => Promise<R>): [undefine
         toBeRan: () => {
           const whatWeGetFromTheListener = listener();
           return action(whatWeGetFromTheListener);
-        }
+        },
       });
     } else {
       setState({
-        toBeRan: undefined
-      })
+        toBeRan: undefined,
+      });
     }
   };
 
   /**
    * activator will call runner if there is someone subscribed
    */
-  const activator = state.toBeRan ? async () => {
-    if (state.toBeRan) {
-      return state.toBeRan();
-    }
-    return Promise.reject();
-  } : undefined;
+  const activator = state.toBeRan
+    ? async () => {
+        if (state.toBeRan) {
+          return state.toBeRan();
+        }
+        return Promise.reject();
+      }
+    : undefined;
 
   return [activator, subscriber];
 }

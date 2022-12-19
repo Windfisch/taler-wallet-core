@@ -15,29 +15,36 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { Fragment, h } from "preact";
 import { useTranslator } from "../../i18n/index.js";
 import { Input } from "./Input.js";
 
-export function InputLocation({name}:{name:string}) {
-  const i18n = useTranslator()
-  return <>
-    <Input name={`${name}.country`} label={i18n`Country`} />
-    <Input name={`${name}.address_lines`} inputType="multiline"
-      label={i18n`Address`}
-      toStr={(v: string[] | undefined) => !v ? '' : v.join('\n')}
-      fromStr={(v: string) => v.split('\n')}
-    />
-    <Input name={`${name}.building_number`} label={i18n`Building number`} />
-    <Input name={`${name}.building_name`} label={i18n`Building name`} />
-    <Input name={`${name}.street`} label={i18n`Street`} />
-    <Input name={`${name}.post_code`} label={i18n`Post code`} />
-    <Input name={`${name}.town_location`} label={i18n`Town location`} />
-    <Input name={`${name}.town`} label={i18n`Town`} />
-    <Input name={`${name}.district`} label={i18n`District`} />
-    <Input name={`${name}.country_subdivision`} label={i18n`Country subdivision`} />
-  </>
+export function InputLocation({ name }: { name: string }) {
+  const i18n = useTranslator();
+  return (
+    <>
+      <Input name={`${name}.country`} label={i18n`Country`} />
+      <Input
+        name={`${name}.address_lines`}
+        inputType="multiline"
+        label={i18n`Address`}
+        toStr={(v: string[] | undefined) => (!v ? "" : v.join("\n"))}
+        fromStr={(v: string) => v.split("\n")}
+      />
+      <Input name={`${name}.building_number`} label={i18n`Building number`} />
+      <Input name={`${name}.building_name`} label={i18n`Building name`} />
+      <Input name={`${name}.street`} label={i18n`Street`} />
+      <Input name={`${name}.post_code`} label={i18n`Post code`} />
+      <Input name={`${name}.town_location`} label={i18n`Town location`} />
+      <Input name={`${name}.town`} label={i18n`Town`} />
+      <Input name={`${name}.district`} label={i18n`District`} />
+      <Input
+        name={`${name}.country_subdivision`}
+        label={i18n`Country subdivision`}
+      />
+    </>
+  );
 }

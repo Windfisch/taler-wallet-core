@@ -30,36 +30,44 @@ interface Props {
   onDelete: () => void;
 }
 
-export default function Detail({ onUpdate, onLoadError, onUnauthorized, onDelete, onNotFound }: Props): VNode {
-  const { id } = useInstanceContext()
-  const result = useInstanceDetails()
-  const [deleting, setDeleting] = useState<boolean>(false)
+export default function Detail({
+  onUpdate,
+  onLoadError,
+  onUnauthorized,
+  onDelete,
+  onNotFound,
+}: Props): VNode {
+  const { id } = useInstanceContext();
+  const result = useInstanceDetails();
+  const [deleting, setDeleting] = useState<boolean>(false);
 
-  const { deleteInstance } = useInstanceAPI()
+  const { deleteInstance } = useInstanceAPI();
 
-  if (result.clientError && result.isUnauthorized) return onUnauthorized()
-  if (result.clientError && result.isNotfound) return onNotFound()
-  if (result.loading) return <Loading />
-  if (!result.ok) return onLoadError(result)
+  if (result.clientError && result.isUnauthorized) return onUnauthorized();
+  if (result.clientError && result.isNotfound) return onNotFound();
+  if (result.loading) return <Loading />;
+  if (!result.ok) return onLoadError(result);
 
-  return <Fragment>
-    <DetailPage
-      selected={result.data}
-      onUpdate={onUpdate}
-      onDelete={() => setDeleting(true)}
-    />
-    {deleting && <DeleteModal
-      element={{ name: result.data.name, id }}
-      onCancel={() => setDeleting(false)}
-      onConfirm={async (): Promise<void> => {
-        try {
-          await deleteInstance()
-          onDelete()
-        } catch (error) {
-        }
-        setDeleting(false)
-      }}
-    />}
-
-  </Fragment>
+  return (
+    <Fragment>
+      <DetailPage
+        selected={result.data}
+        onUpdate={onUpdate}
+        onDelete={() => setDeleting(true)}
+      />
+      {deleting && (
+        <DeleteModal
+          element={{ name: result.data.name, id }}
+          onCancel={() => setDeleting(false)}
+          onConfirm={async (): Promise<void> => {
+            try {
+              await deleteInstance();
+              onDelete();
+            } catch (error) {}
+            setDeleting(false);
+          }}
+        />
+      )}
+    </Fragment>
+  );
 }

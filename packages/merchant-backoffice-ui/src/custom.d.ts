@@ -13,11 +13,11 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-declare module '*.po' {
+declare module "*.po" {
   const content: any;
   export default content;
 }
-declare module 'jed' {
+declare module "jed" {
   const x: any;
   export = x;
 }
@@ -29,12 +29,12 @@ declare module "*.png" {
   const content: any;
   export default content;
 }
-declare module '*.svg' {
+declare module "*.svg" {
   const content: any;
   export default content;
 }
 
-declare module '*.scss' {
+declare module "*.scss" {
   const content: Record<string, string>;
   export default content;
 }

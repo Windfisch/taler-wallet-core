@@ -16,43 +16,38 @@
 import { h, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import InstanceCreatePage from "./paths/admin/create/index.js";
-import InstanceListPage from './paths/admin/list/index.js';
-
+import InstanceListPage from "./paths/admin/list/index.js";
 
 export enum AdminPaths {
-  list_instances = '/instances',
-  new_instance = '/instance/new',
+  list_instances = "/instances",
+  new_instance = "/instance/new",
 }
 
 export function AdminRoutes(): VNode {
-  
-  return <Router>
+  return (
+    <Router>
+      <Route
+        path={AdminPaths.list_instances}
+        component={InstanceListPage}
+        onCreate={() => {
+          route(AdminPaths.new_instance);
+        }}
+        onUpdate={(id: string): void => {
+          route(`/instance/${id}/update`);
+        }}
+      />
 
-    <Route path={AdminPaths.list_instances} component={InstanceListPage}
+      <Route
+        path={AdminPaths.new_instance}
+        component={InstanceCreatePage}
+        onBack={() => route(AdminPaths.list_instances)}
+        onConfirm={() => {
+          // route(AdminPaths.list_instances);
+        }}
 
-      onCreate={() => {
-        route(AdminPaths.new_instance);
-      }}
-
-      onUpdate={(id: string): void => {
-        route(`/instance/${id}/update`);
-      }}
-
-    />
-
-    <Route path={AdminPaths.new_instance} component={InstanceCreatePage}
-
-      onBack={() => route(AdminPaths.list_instances)}
-
-      onConfirm={() => {
-        // route(AdminPaths.list_instances);
-      }}
-
-      // onError={(error: any) => {
-      // }}
-      
-    />
-
-
-  </Router>
+        // onError={(error: any) => {
+        // }}
+      />
+    </Router>
+  );
 }

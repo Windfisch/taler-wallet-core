@@ -15,37 +15,59 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { ComponentChildren, createContext, h, VNode } from "preact";
 import { useContext, useMemo } from "preact/hooks";
 
-type Updater<S> = (value: ((prevState: S) => S) ) => void;
+type Updater<S> = (value: (prevState: S) => S) => void;
 
 export interface Props<T> {
   object?: Partial<T>;
   errors?: FormErrors<T>;
   name?: string;
   valueHandler: Updater<Partial<T>> | null;
-  children: ComponentChildren
+  children: ComponentChildren;
 }
 
-const noUpdater: Updater<Partial<unknown>> = () => (s: unknown) => s
+const noUpdater: Updater<Partial<unknown>> = () => (s: unknown) => s;
 
-export function FormProvider<T>({ object = {}, errors = {}, name = '', valueHandler, children }: Props<T>): VNode {
+export function FormProvider<T>({
+  object = {},
+  errors = {},
+  name = "",
+  valueHandler,
+  children,
+}: Props<T>): VNode {
   const initialObject = useMemo(() => object, []);
-  const value = useMemo<FormType<T>>(() => ({ errors, object, initialObject, valueHandler: valueHandler ? valueHandler : noUpdater, name, toStr: {}, fromStr: {} }), [errors, object, valueHandler]);
+  const value = useMemo<FormType<T>>(
+    () => ({
+      errors,
+      object,
+      initialObject,
+      valueHandler: valueHandler ? valueHandler : noUpdater,
+      name,
+      toStr: {},
+      fromStr: {},
+    }),
+    [errors, object, valueHandler],
+  );
 
-  return <FormContext.Provider value={value}>
-    <form class="field" onSubmit={(e) => {
-      e.preventDefault();
-      // if (valueHandler) valueHandler(object);
-    }}>
-      {children}
-    </form>
-  </FormContext.Provider>;
+  return (
+    <FormContext.Provider value={value}>
+      <form
+        class="field"
+        onSubmit={(e) => {
+          e.preventDefault();
+          // if (valueHandler) valueHandler(object);
+        }}
+      >
+        {children}
+      </form>
+    </FormContext.Provider>
+  );
 }
 
 export interface FormType<T> {
@@ -58,24 +80,24 @@ export interface FormType<T> {
   valueHandler: Updater<Partial<T>>;
 }
 
-const FormContext = createContext<FormType<unknown>>(null!)
+const FormContext = createContext<FormType<unknown>>(null!);
 
 export function useFormContext<T>() {
-  return useContext<FormType<T>>(FormContext)
+  return useContext<FormType<T>>(FormContext);
 }
 
 export type FormErrors<T> = {
-  [P in keyof T]?: string | FormErrors<T[P]>
-}
+  [P in keyof T]?: string | FormErrors<T[P]>;
+};
 
 export type FormtoStr<T> = {
-  [P in keyof T]?: ((f?: T[P]) => string)
-}
+  [P in keyof T]?: (f?: T[P]) => string;
+};
 
 export type FormfromStr<T> = {
-  [P in keyof T]?: ((f: string) => T[P])
-}
+  [P in keyof T]?: (f: string) => T[P];
+};
 
 export type FormUpdater<T> = {
-  [P in keyof T]?: (f: keyof T) => (v: T[P]) => void
-}
+  [P in keyof T]?: (f: keyof T) => (v: T[P]) => void;
+};

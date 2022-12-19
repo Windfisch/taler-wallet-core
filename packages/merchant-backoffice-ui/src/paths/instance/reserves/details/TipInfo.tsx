@@ -74,7 +74,7 @@ export function TipInfo({ id, amount, entity }: Props): VNode {
                     ? "never"
                     : format(
                         entity.expiration.t_s * 1000,
-                        "yyyy/MM/dd HH:mm:ss"
+                        "yyyy/MM/dd HH:mm:ss",
                       )
                 }
               />

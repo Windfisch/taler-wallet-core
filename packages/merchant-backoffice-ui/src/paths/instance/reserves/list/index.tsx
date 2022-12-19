@@ -59,7 +59,7 @@ export default function ListTips({
   const [notif, setNotif] = useState<Notification | undefined>(undefined);
   const i18n = useTranslator();
   const [reserveForTip, setReserveForTip] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const [tipAuthorized, setTipAuthorized] = useState<
     TipConfirmation | undefined
@@ -85,7 +85,7 @@ export default function ListTips({
             try {
               const response = await authorizeTipReserve(
                 reserveForTip,
-                request
+                request,
               );
               setTipAuthorized({
                 request,

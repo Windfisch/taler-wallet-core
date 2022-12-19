@@ -15,28 +15,29 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, FunctionalComponent } from 'preact';
+import { h, VNode, FunctionalComponent } from "preact";
 import { CreatePage as TestedComponent } from "./CreatePage.js";
 
-
 export default {
-  title: 'Pages/Reserve/Create',
+  title: "Pages/Reserve/Create",
   component: TestedComponent,
   argTypes: {
-    onCreate: { action: 'onCreate' },
-    onBack: { action: 'onBack' },
+    onCreate: { action: "onCreate" },
+    onBack: { action: "onBack" },
   },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
-export const Example = createExample(TestedComponent, {
-});
+export const Example = createExample(TestedComponent, {});

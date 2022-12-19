@@ -15,39 +15,57 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { ComponentChildren, h, VNode } from "preact";
 import { useField, InputProps } from "./useField.js";
 
 interface Props<T> extends InputProps<T> {
-  inputType?: 'text' | 'number' | 'multiline' | 'password';
+  inputType?: "text" | "number" | "multiline" | "password";
   expand?: boolean;
   side?: ComponentChildren;
   children: ComponentChildren;
 }
 
-export function TextField<T>({ name, tooltip, label, expand, help, children, side}: Props<keyof T>): VNode {
+export function TextField<T>({
+  name,
+  tooltip,
+  label,
+  expand,
+  help,
+  children,
+  side,
+}: Props<keyof T>): VNode {
   const { error } = useField<T>(name);
-  return <div class="field is-horizontal">
-    <div class="field-label is-normal">
-      <label class="label">
-        {label}
-        {tooltip && <span class="icon has-tooltip-right" data-tooltip={tooltip}>
-          <i class="mdi mdi-information" />
-        </span>}
-      </label>
-    </div>
-    <div class="field-body is-flex-grow-3">
-      <div class="field">
-        <p class={expand ? "control is-expanded has-icons-right" : "control has-icons-right"}>
-          {children}          
-          {help}
-        </p>
-        {error && <p class="help is-danger">{error}</p>}
+  return (
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label class="label">
+          {label}
+          {tooltip && (
+            <span class="icon has-tooltip-right" data-tooltip={tooltip}>
+              <i class="mdi mdi-information" />
+            </span>
+          )}
+        </label>
       </div>
-      {side}
+      <div class="field-body is-flex-grow-3">
+        <div class="field">
+          <p
+            class={
+              expand
+                ? "control is-expanded has-icons-right"
+                : "control has-icons-right"
+            }
+          >
+            {children}
+            {help}
+          </p>
+          {error && <p class="help is-danger">{error}</p>}
+        </div>
+        {side}
+      </div>
     </div>
-  </div>;
+  );
 }

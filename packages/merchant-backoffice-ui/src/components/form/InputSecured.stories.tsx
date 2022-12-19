@@ -15,41 +15,47 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
+import { h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { FormProvider } from "./FormProvider.js";
-import { InputSecured } from './InputSecured.js';
+import { InputSecured } from "./InputSecured.js";
 
 export default {
-  title: 'Components/Form/InputSecured',
+  title: "Components/Form/InputSecured",
   component: InputSecured,
 };
 
-type T = { auth_token: string | null }
+type T = { auth_token: string | null };
 
 export const InitialValueEmpty = (): VNode => {
-  const [state, setState] = useState<Partial<T>>({ auth_token: '' })
-  return <FormProvider<T> object={state} errors={{}} valueHandler={setState}>
-    Initial value: ''
-    <InputSecured<T> name="auth_token" label="Access token" />
-  </FormProvider>
-}
+  const [state, setState] = useState<Partial<T>>({ auth_token: "" });
+  return (
+    <FormProvider<T> object={state} errors={{}} valueHandler={setState}>
+      Initial value: ''
+      <InputSecured<T> name="auth_token" label="Access token" />
+    </FormProvider>
+  );
+};
 
 export const InitialValueToken = (): VNode => {
-  const [state, setState] = useState<Partial<T>>({ auth_token: 'token' })
-  return <FormProvider<T> object={state} errors={{}} valueHandler={setState}>
-    <InputSecured<T> name="auth_token" label="Access token" />
-  </FormProvider>
-}
+  const [state, setState] = useState<Partial<T>>({ auth_token: "token" });
+  return (
+    <FormProvider<T> object={state} errors={{}} valueHandler={setState}>
+      <InputSecured<T> name="auth_token" label="Access token" />
+    </FormProvider>
+  );
+};
 
 export const InitialValueNull = (): VNode => {
-  const [state, setState] = useState<Partial<T>>({ auth_token: null })
-  return <FormProvider<T> object={state} errors={{}} valueHandler={setState}>
-    Initial value: ''
-    <InputSecured<T> name="auth_token" label="Access token" />
-  </FormProvider>
-}
+  const [state, setState] = useState<Partial<T>>({ auth_token: null });
+  return (
+    <FormProvider<T> object={state} errors={{}} valueHandler={setState}>
+      Initial value: ''
+      <InputSecured<T> name="auth_token" label="Access token" />
+    </FormProvider>
+  );
+};

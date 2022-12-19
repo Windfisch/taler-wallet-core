@@ -14,23 +14,22 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
+/**
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { h, VNode } from 'preact';
-import { Link } from 'preact-router/match';
+import { h, VNode } from "preact";
+import { Link } from "preact-router/match";
 
 export default function NotFoundPage(): VNode {
-    return (
-        <div>
-            <h1>Error 404</h1>
-            <p>That page doesn&apos;t exist.</p>
-            <Link href="/">
-                <h4>Back to Home</h4>
-            </Link>
-        </div>
-    );
+  return (
+    <div>
+      <h1>Error 404</h1>
+      <p>That page doesn&apos;t exist.</p>
+      <Link href="/">
+        <h4>Back to Home</h4>
+      </Link>
+    </div>
+  );
 }
-

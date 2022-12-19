@@ -26,64 +26,89 @@ interface Props {
   onCreateAnother?: () => void;
 }
 
-export function OrderCreatedSuccessfully({ entity, onConfirm, onCreateAnother }: Props): VNode {
-  const { getPaymentURL } = useOrderAPI()
-  const [url, setURL] = useState<string | undefined>(undefined)
+export function OrderCreatedSuccessfully({
+  entity,
+  onConfirm,
+  onCreateAnother,
+}: Props): VNode {
+  const { getPaymentURL } = useOrderAPI();
+  const [url, setURL] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    getPaymentURL(entity.response.order_id).then(response => {
-      setURL(response.data)
-    })
-  }, [getPaymentURL, entity.response.order_id])
+    getPaymentURL(entity.response.order_id).then((response) => {
+      setURL(response.data);
+    });
+  }, [getPaymentURL, entity.response.order_id]);
 
-  return <CreatedSuccessfully onConfirm={onConfirm} onCreateAnother={onCreateAnother}>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label"><Translate>Amount</Translate></label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={entity.request.order.amount} />
-          </p>
+  return (
+    <CreatedSuccessfully
+      onConfirm={onConfirm}
+      onCreateAnother={onCreateAnother}
+    >
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">
+            <Translate>Amount</Translate>
+          </label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input
+                class="input"
+                readonly
+                value={entity.request.order.amount}
+              />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label"><Translate>Summary</Translate></label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={entity.request.order.summary} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">
+            <Translate>Summary</Translate>
+          </label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input
+                class="input"
+                readonly
+                value={entity.request.order.summary}
+              />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label"><Translate>Order ID</Translate></label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={entity.response.order_id} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">
+            <Translate>Order ID</Translate>
+          </label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input class="input" readonly value={entity.response.order_id} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label"><Translate>Payment URL</Translate></label>
-      </div>
-      <div class="field-body is-flex-grow-3">
-        <div class="field">
-          <p class="control">
-            <input class="input" readonly value={url} />
-          </p>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label">
+            <Translate>Payment URL</Translate>
+          </label>
+        </div>
+        <div class="field-body is-flex-grow-3">
+          <div class="field">
+            <p class="control">
+              <input class="input" readonly value={url} />
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  </CreatedSuccessfully>;
+    </CreatedSuccessfully>
+  );
 }

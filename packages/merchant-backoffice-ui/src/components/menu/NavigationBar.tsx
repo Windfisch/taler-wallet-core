@@ -15,12 +15,12 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode } from 'preact';
-import logo from '../../assets/logo.jpeg';
+import { h, VNode } from "preact";
+import logo from "../../assets/logo.jpeg";
 import { LangSelector } from "./LangSelector.js";
 
 interface Props {
@@ -29,30 +29,46 @@ interface Props {
 }
 
 export function NavigationBar({ onMobileMenu, title }: Props): VNode {
-  return (<nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
-    <div class="navbar-brand">
-      <span class="navbar-item" style={{ fontSize: 24, fontWeight: 900 }}>{title}</span>
+  return (
+    <nav
+      class="navbar is-fixed-top"
+      role="navigation"
+      aria-label="main navigation"
+    >
+      <div class="navbar-brand">
+        <span class="navbar-item" style={{ fontSize: 24, fontWeight: 900 }}>
+          {title}
+        </span>
 
-      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" onClick={(e) => {
-        onMobileMenu()
-        e.stopPropagation()
-      }}>
-        <span aria-hidden="true" />
-        <span aria-hidden="true" />
-        <span aria-hidden="true" />
-      </a>
-    </div>
+        <a
+          role="button"
+          class="navbar-burger"
+          aria-label="menu"
+          aria-expanded="false"
+          onClick={(e) => {
+            onMobileMenu();
+            e.stopPropagation();
+          }}
+        >
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+          <span aria-hidden="true" />
+        </a>
+      </div>
 
-    <div class="navbar-menu ">
-      <a class="navbar-start is-justify-content-center is-flex-grow-1" href="https://taler.net">
-        <img src={logo} style={{ height: 50, maxHeight: 50 }} />
-      </a>
-      <div class="navbar-end">
-        <div class="navbar-item" style={{ paddingTop: 4, paddingBottom: 4 }}>
-          <LangSelector />
+      <div class="navbar-menu ">
+        <a
+          class="navbar-start is-justify-content-center is-flex-grow-1"
+          href="https://taler.net"
+        >
+          <img src={logo} style={{ height: 50, maxHeight: 50 }} />
+        </a>
+        <div class="navbar-end">
+          <div class="navbar-item" style={{ paddingTop: 4, paddingBottom: 4 }}>
+            <LangSelector />
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
+    </nav>
   );
 }

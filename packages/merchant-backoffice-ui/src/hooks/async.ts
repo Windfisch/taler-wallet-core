@@ -15,38 +15,41 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { useState } from "preact/hooks";
 import { cancelPendingRequest } from "./backend.js";
 
 export interface Options {
-  slowTolerance: number,
+  slowTolerance: number;
 }
 
 export interface AsyncOperationApi<T> {
-  request: (...a: any) => void,
-  cancel: () => void,
-  data: T | undefined,
-  isSlow: boolean,
-  isLoading: boolean,
-  error: string | undefined
+  request: (...a: any) => void;
+  cancel: () => void;
+  data: T | undefined;
+  isSlow: boolean;
+  isLoading: boolean;
+  error: string | undefined;
 }
 
-export function useAsync<T>(fn?: (...args: any) => Promise<T>, { slowTolerance: tooLong }: Options = { slowTolerance: 1000 }): AsyncOperationApi<T> {
+export function useAsync<T>(
+  fn?: (...args: any) => Promise<T>,
+  { slowTolerance: tooLong }: Options = { slowTolerance: 1000 },
+): AsyncOperationApi<T> {
   const [data, setData] = useState<T | undefined>(undefined);
   const [isLoading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<any>(undefined);
-  const [isSlow, setSlow] = useState(false)
+  const [isSlow, setSlow] = useState(false);
 
   const request = async (...args: any) => {
     if (!fn) return;
     setLoading(true);
 
     const handler = setTimeout(() => {
-      setSlow(true)
-    }, tooLong)
+      setSlow(true);
+    }, tooLong);
 
     try {
       const result = await fn(...args);
@@ -55,14 +58,14 @@ export function useAsync<T>(fn?: (...args: any) => Promise<T>, { slowTolerance: 
       setError(error);
     }
     setLoading(false);
-    setSlow(false)
-    clearTimeout(handler)
+    setSlow(false);
+    clearTimeout(handler);
   };
 
   function cancel() {
-    cancelPendingRequest()
+    cancelPendingRequest();
     setLoading(false);
-    setSlow(false)
+    setSlow(false);
   }
 
   return {
@@ -71,6 +74,6 @@ export function useAsync<T>(fn?: (...args: any) => Promise<T>, { slowTolerance: 
     data,
     isSlow,
     isLoading,
-    error
+    error,
   };
 }

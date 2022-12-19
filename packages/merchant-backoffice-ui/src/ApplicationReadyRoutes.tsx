@@ -25,7 +25,10 @@ import { useBackendInstancesTestForAdmin } from "./hooks/backend.js";
 import { InstanceRoutes } from "./InstanceRoutes.js";
 import LoginPage from "./paths/login/index.js";
 import { INSTANCE_ID_LOOKUP } from "./utils/constants.js";
-import { NotYetReadyAppMenu, NotificationCard } from "./components/menu/index.js";
+import {
+  NotYetReadyAppMenu,
+  NotificationCard,
+} from "./components/menu/index.js";
 import { useTranslator } from "./i18n/index.js";
 import { createHashHistory } from "history";
 import { useState } from "preact/hooks";
@@ -107,7 +110,7 @@ export function ApplicationReadyRoutes(): VNode {
 
 function DefaultMainRoute({ instance, admin, instanceNameByBackendURL }: any) {
   const [instanceName, setInstanceName] = useState(
-    instanceNameByBackendURL || instance || "default"
+    instanceNameByBackendURL || instance || "default",
   );
 
   return (

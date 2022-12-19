@@ -15,22 +15,22 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { Fragment, h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
+import { Fragment, h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { Loading } from "../../../../components/exception/loading.js";
 import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { HttpError } from "../../../../hooks/backend.js";
 import { useProductAPI, useProductDetails } from "../../../../hooks/product.js";
-import { useTranslator } from '../../../../i18n/index.js';
+import { useTranslator } from "../../../../i18n/index.js";
 import { Notification } from "../../../../utils/types.js";
 import { UpdatePage } from "./UpdatePage.js";
 
-export type Entity = MerchantBackend.Products.ProductAddDetail
+export type Entity = MerchantBackend.Products.ProductAddDetail;
 interface Props {
   onBack?: () => void;
   onConfirm: () => void;
@@ -39,33 +39,43 @@ interface Props {
   onLoadError: (e: HttpError) => VNode;
   pid: string;
 }
-export default function UpdateProduct({ pid, onConfirm, onBack, onUnauthorized, onNotFound, onLoadError }: Props): VNode {
-  const { updateProduct } = useProductAPI()
-  const result = useProductDetails(pid)
-  const [notif, setNotif] = useState<Notification | undefined>(undefined)
+export default function UpdateProduct({
+  pid,
+  onConfirm,
+  onBack,
+  onUnauthorized,
+  onNotFound,
+  onLoadError,
+}: Props): VNode {
+  const { updateProduct } = useProductAPI();
+  const result = useProductDetails(pid);
+  const [notif, setNotif] = useState<Notification | undefined>(undefined);
 
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
-  if (result.clientError && result.isUnauthorized) return onUnauthorized()
-  if (result.clientError && result.isNotfound) return onNotFound()
-  if (result.loading) return <Loading />
-  if (!result.ok) return onLoadError(result)
+  if (result.clientError && result.isUnauthorized) return onUnauthorized();
+  if (result.clientError && result.isNotfound) return onNotFound();
+  if (result.loading) return <Loading />;
+  if (!result.ok) return onLoadError(result);
 
-  return <Fragment>
-    <NotificationCard notification={notif} />
-    <UpdatePage
-      product={{ ...result.data, product_id: pid }}
-      onBack={onBack}
-      onUpdate={(data) => {
-        return updateProduct(pid, data)
-          .then(onConfirm)
-          .catch((error) => {
-            setNotif({
-              message: i18n`could not create product`,
-              type: "ERROR",
-              description: error.message
-            })
-          })
-      }} />
-  </Fragment>
+  return (
+    <Fragment>
+      <NotificationCard notification={notif} />
+      <UpdatePage
+        product={{ ...result.data, product_id: pid }}
+        onBack={onBack}
+        onUpdate={(data) => {
+          return updateProduct(pid, data)
+            .then(onConfirm)
+            .catch((error) => {
+              setNotif({
+                message: i18n`could not create product`,
+                type: "ERROR",
+                description: error.message,
+              });
+            });
+        }}
+      />
+    </Fragment>
+  );
 }

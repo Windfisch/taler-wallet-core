@@ -14,10 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+/**
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { h, VNode } from "preact";
 import { LoginModal } from "../../components/exception/login.js";
 
@@ -25,5 +25,5 @@ interface Props {
   onConfirm: (url: string, token?: string) => void;
 }
 export default function LoginPage({ onConfirm }: Props): VNode {
-  return <LoginModal onConfirm={onConfirm} />
-} 
+  return <LoginModal onConfirm={onConfirm} />;
+}

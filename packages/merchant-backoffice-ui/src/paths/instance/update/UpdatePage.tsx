@@ -44,7 +44,7 @@ type Entity = MerchantBackend.Instances.InstanceReconfigurationMessage & {
 interface Props {
   onUpdate: (d: Entity) => void;
   onChangeAuth: (
-    d: MerchantBackend.Instances.InstanceAuthConfigurationMessage
+    d: MerchantBackend.Instances.InstanceAuthConfigurationMessage,
   ) => Promise<void>;
   selected: MerchantBackend.Instances.QueryInstancesResponse;
   isLoading: boolean;
@@ -52,7 +52,7 @@ interface Props {
 }
 
 function convert(
-  from: MerchantBackend.Instances.QueryInstancesResponse
+  from: MerchantBackend.Instances.QueryInstancesResponse,
 ): Entity {
   const { accounts, ...rest } = from;
   const payto_uris = accounts.filter((a) => a.active).map((a) => a.payto_uri);
@@ -105,7 +105,7 @@ export function UpdatePage({
         : undefinedIfEmpty(
             value.payto_uris.map((p) => {
               return !PAYTO_REGEX.test(p) ? i18n`is not valid` : undefined;
-            })
+            }),
           ),
     default_max_deposit_fee: !value.default_max_deposit_fee
       ? i18n`required`
@@ -144,7 +144,7 @@ export function UpdatePage({
   };
 
   const hasErrors = Object.keys(errors).some(
-    (k) => (errors as any)[k] !== undefined
+    (k) => (errors as any)[k] !== undefined,
   );
   const submit = async (): Promise<void> => {
     await onUpdate(value as Entity);

@@ -15,21 +15,27 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { FormErrors, FormProvider } from "../../../../components/form/FormProvider.js";
+import {
+  FormErrors,
+  FormProvider,
+} from "../../../../components/form/FormProvider.js";
 import { Input } from "../../../../components/form/Input.js";
 import { InputCurrency } from "../../../../components/form/InputCurrency.js";
-import { ConfirmModal, ContinueModal } from "../../../../components/modal/index.js";
+import {
+  ConfirmModal,
+  ContinueModal,
+} from "../../../../components/modal/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { useTranslator } from "../../../../i18n/index.js";
 import { AuthorizeTipSchema } from "../../../../schemas/index.js";
 import { CreatedSuccessfully } from "./CreatedSuccessfully.js";
-import * as yup from 'yup';
+import * as yup from "yup";
 
 interface AuthorizeTipModalProps {
   onCancel: () => void;
@@ -40,46 +46,79 @@ interface AuthorizeTipModalProps {
   };
 }
 
-export function AuthorizeTipModal({ onCancel, onConfirm, tipAuthorized }: AuthorizeTipModalProps): VNode {
+export function AuthorizeTipModal({
+  onCancel,
+  onConfirm,
+  tipAuthorized,
+}: AuthorizeTipModalProps): VNode {
   // const result = useOrderDetails(id)
-  type State = MerchantBackend.Tips.TipCreateRequest
-  const [form, setValue] = useState<Partial<State>>({})
+  type State = MerchantBackend.Tips.TipCreateRequest;
+  const [form, setValue] = useState<Partial<State>>({});
   const i18n = useTranslator();
 
   // const [errors, setErrors] = useState<FormErrors<State>>({})
-  let errors: FormErrors<State> = {}
+  let errors: FormErrors<State> = {};
   try {
-    AuthorizeTipSchema.validateSync(form, { abortEarly: false })
+    AuthorizeTipSchema.validateSync(form, { abortEarly: false });
   } catch (err) {
     if (err instanceof yup.ValidationError) {
-      const yupErrors = err.inner as any[]
-      errors = yupErrors.reduce((prev, cur) => !cur.path ? prev : ({ ...prev, [cur.path]: cur.message }), {})
+      const yupErrors = err.inner as any[];
+      errors = yupErrors.reduce(
+        (prev, cur) =>
+          !cur.path ? prev : { ...prev, [cur.path]: cur.message },
+        {},
+      );
     }
   }
-  const hasErrors = Object.keys(errors).some(k => (errors as any)[k] !== undefined)
+  const hasErrors = Object.keys(errors).some(
+    (k) => (errors as any)[k] !== undefined,
+  );
 
   const validateAndConfirm = () => {
-    onConfirm(form as State)
-  }
+    onConfirm(form as State);
+  };
   if (tipAuthorized) {
-    return <ContinueModal description="tip" active onConfirm={onCancel}>
-      <CreatedSuccessfully
-        entity={tipAuthorized.response}
-        request={tipAuthorized.request}
-        onConfirm={onCancel}
-      />
-    </ContinueModal>
+    return (
+      <ContinueModal description="tip" active onConfirm={onCancel}>
+        <CreatedSuccessfully
+          entity={tipAuthorized.response}
+          request={tipAuthorized.request}
+          onConfirm={onCancel}
+        />
+      </ContinueModal>
+    );
   }
 
-  return <ConfirmModal description="tip" active onCancel={onCancel} disabled={hasErrors} onConfirm={validateAndConfirm}>
-
-    <FormProvider<State> errors={errors} object={form} valueHandler={setValue} >
-      <InputCurrency<State> name="amount" label={i18n`Amount`} tooltip={i18n`amount of tip`} />
-      <Input<State> name="justification" label={i18n`Justification`} inputType="multiline" tooltip={i18n`reason for the tip`} />
-      <Input<State> name="next_url" label={i18n`URL after tip`} tooltip={i18n`URL to visit after tip payment`} />
-    </FormProvider>
-
-  </ConfirmModal>
+  return (
+    <ConfirmModal
+      description="tip"
+      active
+      onCancel={onCancel}
+      disabled={hasErrors}
+      onConfirm={validateAndConfirm}
+    >
+      <FormProvider<State>
+        errors={errors}
+        object={form}
+        valueHandler={setValue}
+      >
+        <InputCurrency<State>
+          name="amount"
+          label={i18n`Amount`}
+          tooltip={i18n`amount of tip`}
+        />
+        <Input<State>
+          name="justification"
+          label={i18n`Justification`}
+          inputType="multiline"
+          tooltip={i18n`reason for the tip`}
+        />
+        <Input<State>
+          name="next_url"
+          label={i18n`URL after tip`}
+          tooltip={i18n`URL to visit after tip payment`}
+        />
+      </FormProvider>
+    </ConfirmModal>
+  );
 }
-
-

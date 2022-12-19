@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { ComponentChildren, h } from "preact";
 import { InputWithAddon } from "./InputWithAddon.js";
 import { InputProps } from "./useField.js";
@@ -29,14 +29,32 @@ export interface Props<T> extends InputProps<T> {
   children?: ComponentChildren;
 }
 
-export function InputNumber<T>({ name, readonly, placeholder, tooltip, label, help, expand, children, side }: Props<keyof T>) {
-  return <InputWithAddon<T> name={name} readonly={readonly} 
-    fromStr={(v) => !v ? undefined : parseInt(v, 10) } toStr={(v) => `${v}`}
-    inputType='number' expand={expand}
-    label={label} placeholder={placeholder} help={help} tooltip={tooltip}
-    inputExtra={{ min: 0 }}
-    children={children}
-    side={side}
-  />
+export function InputNumber<T>({
+  name,
+  readonly,
+  placeholder,
+  tooltip,
+  label,
+  help,
+  expand,
+  children,
+  side,
+}: Props<keyof T>) {
+  return (
+    <InputWithAddon<T>
+      name={name}
+      readonly={readonly}
+      fromStr={(v) => (!v ? undefined : parseInt(v, 10))}
+      toStr={(v) => `${v}`}
+      inputType="number"
+      expand={expand}
+      label={label}
+      placeholder={placeholder}
+      help={help}
+      tooltip={tooltip}
+      inputExtra={{ min: 0 }}
+      children={children}
+      side={side}
+    />
+  );
 }
-

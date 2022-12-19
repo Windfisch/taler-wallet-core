@@ -15,29 +15,31 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, FunctionalComponent } from 'preact';
+import { h, VNode, FunctionalComponent } from "preact";
 import { CreatePage as TestedComponent } from "./CreatePage.js";
 
-
 export default {
-  title: 'Pages/Transfer/Create',
+  title: "Pages/Transfer/Create",
   component: TestedComponent,
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
 export const Example = createExample(TestedComponent, {
-  accounts: ['payto://x-taler-bank/account1','payto://x-taler-bank/account2']
+  accounts: ["payto://x-taler-bank/account1", "payto://x-taler-bank/account2"],
 });

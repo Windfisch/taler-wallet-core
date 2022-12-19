@@ -171,7 +171,7 @@ function Table({ instances, onNewTip, onSelect, onDelete }: TableProps): VNode {
                     ? "never"
                     : format(
                         i.expiration_time.t_s * 1000,
-                        "yyyy/MM/dd HH:mm:ss"
+                        "yyyy/MM/dd HH:mm:ss",
                       )}
                 </td>
                 <td
@@ -282,7 +282,7 @@ function TableWithoutFund({
                     ? "never"
                     : format(
                         i.expiration_time.t_s * 1000,
-                        "yyyy/MM/dd HH:mm:ss"
+                        "yyyy/MM/dd HH:mm:ss",
                       )}
                 </td>
                 <td

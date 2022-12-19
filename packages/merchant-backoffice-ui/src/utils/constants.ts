@@ -15,26 +15,30 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 //https://tools.ietf.org/html/rfc8905
-export const PAYTO_REGEX = /^payto:\/\/[a-zA-Z][a-zA-Z0-9-.]+(\/[a-zA-Z0-9\-\.\~\(\)@_%:!$&'*+,;=]*)*\??((amount|receiver-name|sender-name|instruction|message)=[a-zA-Z0-9\-\.\~\(\)@_%:!$'*+,;=]*&?)*$/
-export const PAYTO_WIRE_METHOD_LOOKUP = /payto:\/\/([a-zA-Z][a-zA-Z0-9-.]+)\/.*/
+export const PAYTO_REGEX =
+  /^payto:\/\/[a-zA-Z][a-zA-Z0-9-.]+(\/[a-zA-Z0-9\-\.\~\(\)@_%:!$&'*+,;=]*)*\??((amount|receiver-name|sender-name|instruction|message)=[a-zA-Z0-9\-\.\~\(\)@_%:!$'*+,;=]*&?)*$/;
+export const PAYTO_WIRE_METHOD_LOOKUP =
+  /payto:\/\/([a-zA-Z][a-zA-Z0-9-.]+)\/.*/;
 
-export const AMOUNT_REGEX = /^[a-zA-Z][a-zA-Z]*:[0-9][0-9,]*\.?[0-9,]*$/
+export const AMOUNT_REGEX = /^[a-zA-Z][a-zA-Z]*:[0-9][0-9,]*\.?[0-9,]*$/;
 
-export const INSTANCE_ID_LOOKUP = /\/instances\/([^/]*)\/?$/
+export const INSTANCE_ID_LOOKUP = /\/instances\/([^/]*)\/?$/;
 
-export const AMOUNT_ZERO_REGEX = /^[a-zA-Z][a-zA-Z]*:0$/
+export const AMOUNT_ZERO_REGEX = /^[a-zA-Z][a-zA-Z]*:0$/;
 
-export const CROCKFORD_BASE32_REGEX = /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]+[*~$=U]*$/
+export const CROCKFORD_BASE32_REGEX =
+  /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]+[*~$=U]*$/;
 
-export const URL_REGEX = /^((https?:)(\/\/\/?)([\w]*(?::[\w]*)?@)?([\d\w\.-]+)(?::(\d+))?)\/$/
+export const URL_REGEX =
+  /^((https?:)(\/\/\/?)([\w]*(?::[\w]*)?@)?([\d\w\.-]+)(?::(\d+))?)\/$/;
 
 // how much rows we add every time user hit load more
-export const PAGE_SIZE = 20
+export const PAGE_SIZE = 20;
 // how bigger can be the result set
 // after this threshold, load more with move the cursor
 export const MAX_RESULT_SIZE = PAGE_SIZE * 2 - 1;
@@ -44,7 +48,7 @@ export const DEFAULT_REQUEST_TIMEOUT = 10;
 
 export const MAX_IMAGE_SIZE = 1024 * 1024;
 
-export const INSTANCE_ID_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9_.@-]+$/
+export const INSTANCE_ID_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9_.@-]+$/;
 
 export const COUNTRY_TABLE = {
   AE: "U.A.E.",
@@ -189,6 +193,5 @@ export const COUNTRY_TABLE = {
   VN: "Viet Nam",
   YE: "Yemen",
   ZA: "South Africa",
-  ZW: "Zimbabwe"
-}
-
+  ZW: "Zimbabwe",
+};

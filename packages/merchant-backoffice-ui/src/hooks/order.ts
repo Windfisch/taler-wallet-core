@@ -32,15 +32,15 @@ import {
 export interface OrderAPI {
   //FIXME: add OutOfStockResponse on 410
   createOrder: (
-    data: MerchantBackend.Orders.PostOrderRequest
+    data: MerchantBackend.Orders.PostOrderRequest,
   ) => Promise<HttpResponseOk<MerchantBackend.Orders.PostOrderResponse>>;
   forgetOrder: (
     id: string,
-    data: MerchantBackend.Orders.ForgetRequest
+    data: MerchantBackend.Orders.ForgetRequest,
   ) => Promise<HttpResponseOk<void>>;
   refundOrder: (
     id: string,
-    data: MerchantBackend.Orders.RefundRequest
+    data: MerchantBackend.Orders.RefundRequest,
   ) => Promise<HttpResponseOk<MerchantBackend.Orders.MerchantRefundResponse>>;
   deleteOrder: (id: string) => Promise<HttpResponseOk<void>>;
   getPaymentURL: (id: string) => Promise<HttpResponseOk<string>>;
@@ -56,7 +56,7 @@ export function orderFetcher<T>(
   refunded?: YesOrNo,
   wired?: YesOrNo,
   searchDate?: Date,
-  delta?: number
+  delta?: number,
 ): Promise<HttpResponseOk<T>> {
   const date_ms =
     delta && delta < 0 && searchDate
@@ -78,16 +78,16 @@ export function useOrderAPI(): OrderAPI {
 
   const { url, token } = !admin
     ? {
-      url: baseUrl,
-      token: adminToken,
-    }
+        url: baseUrl,
+        token: adminToken,
+      }
     : {
-      url: `${baseUrl}/instances/${id}`,
-      token: instanceToken,
-    };
+        url: `${baseUrl}/instances/${id}`,
+        token: instanceToken,
+      };
 
   const createOrder = async (
-    data: MerchantBackend.Orders.PostOrderRequest
+    data: MerchantBackend.Orders.PostOrderRequest,
   ): Promise<HttpResponseOk<MerchantBackend.Orders.PostOrderResponse>> => {
     const res = await request<MerchantBackend.Orders.PostOrderResponse>(
       `${url}/private/orders`,
@@ -95,7 +95,7 @@ export function useOrderAPI(): OrderAPI {
         method: "post",
         token,
         data,
-      }
+      },
     );
     await mutateAll(/.*private\/orders.*/);
     // mutate('')
@@ -103,7 +103,7 @@ export function useOrderAPI(): OrderAPI {
   };
   const refundOrder = async (
     orderId: string,
-    data: MerchantBackend.Orders.RefundRequest
+    data: MerchantBackend.Orders.RefundRequest,
   ): Promise<HttpResponseOk<MerchantBackend.Orders.MerchantRefundResponse>> => {
     mutateAll(/@"\/private\/orders"@/);
     const res = request<MerchantBackend.Orders.MerchantRefundResponse>(
@@ -112,17 +112,17 @@ export function useOrderAPI(): OrderAPI {
         method: "post",
         token,
         data,
-      }
+      },
     );
 
     // order list returns refundable information, so we must evict everything
     await mutateAll(/.*private\/orders.*/);
-    return res
+    return res;
   };
 
   const forgetOrder = async (
     orderId: string,
-    data: MerchantBackend.Orders.ForgetRequest
+    data: MerchantBackend.Orders.ForgetRequest,
   ): Promise<HttpResponseOk<void>> => {
     mutateAll(/@"\/private\/orders"@/);
     const res = request<void>(`${url}/private/orders/${orderId}/forget`, {
@@ -132,10 +132,10 @@ export function useOrderAPI(): OrderAPI {
     });
     // we may be forgetting some fields that are pare of the listing, so we must evict everything
     await mutateAll(/.*private\/orders.*/);
-    return res
+    return res;
   };
   const deleteOrder = async (
-    orderId: string
+    orderId: string,
   ): Promise<HttpResponseOk<void>> => {
     mutateAll(/@"\/private\/orders"@/);
     const res = request<void>(`${url}/private/orders/${orderId}`, {
@@ -143,18 +143,18 @@ export function useOrderAPI(): OrderAPI {
       token,
     });
     await mutateAll(/.*private\/orders.*/);
-    return res
+    return res;
   };
 
   const getPaymentURL = async (
-    orderId: string
+    orderId: string,
   ): Promise<HttpResponseOk<string>> => {
     return request<MerchantBackend.Orders.MerchantOrderStatusResponse>(
       `${url}/private/orders/${orderId}`,
       {
         method: "get",
         token,
-      }
+      },
     ).then((res) => {
       const url =
         res.data.order_status === "unpaid"
@@ -170,14 +170,14 @@ export function useOrderAPI(): OrderAPI {
 }
 
 export function useOrderDetails(
-  oderId: string
+  oderId: string,
 ): HttpResponse<MerchantBackend.Orders.MerchantOrderStatusResponse> {
   const { url: baseUrl, token: baseToken } = useBackendContext();
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
-    ? { url: baseUrl, token: baseToken, }
-    : { url: `${baseUrl}/instances/${id}`, token: instanceToken, };
+    ? { url: baseUrl, token: baseToken }
+    : { url: `${baseUrl}/instances/${id}`, token: instanceToken };
 
   const { data, error, isValidating } = useSWR<
     HttpResponseOk<MerchantBackend.Orders.MerchantOrderStatusResponse>,
@@ -205,14 +205,14 @@ export interface InstanceOrderFilter {
 
 export function useInstanceOrders(
   args?: InstanceOrderFilter,
-  updateFilter?: (d: Date) => void
+  updateFilter?: (d: Date) => void,
 ): HttpResponsePaginated<MerchantBackend.Orders.OrderHistory> {
   const { url: baseUrl, token: baseToken } = useBackendContext();
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
-    ? { url: baseUrl, token: baseToken, }
-    : { url: `${baseUrl}/instances/${id}`, token: instanceToken, };
+    ? { url: baseUrl, token: baseToken }
+    : { url: `${baseUrl}/instances/${id}`, token: instanceToken };
 
   const [pageBefore, setPageBefore] = useState(1);
   const [pageAfter, setPageAfter] = useState(1);
@@ -241,7 +241,7 @@ export function useInstanceOrders(
       args?.date,
       totalBefore,
     ],
-    orderFetcher
+    orderFetcher,
   );
   const {
     data: afterData,
@@ -258,7 +258,7 @@ export function useInstanceOrders(
       args?.date,
       -totalAfter,
     ],
-    orderFetcher
+    orderFetcher,
   );
 
   //this will save last result
@@ -278,7 +278,8 @@ export function useInstanceOrders(
 
   // if the query returns less that we ask, then we have reach the end or beginning
   const isReachingEnd = afterData && afterData.data.orders.length < totalAfter;
-  const isReachingStart = args?.date === undefined ||
+  const isReachingStart =
+    args?.date === undefined ||
     (beforeData && beforeData.data.orders.length < totalBefore);
 
   const pagination = {
@@ -290,9 +291,9 @@ export function useInstanceOrders(
         setPageAfter(pageAfter + 1);
       } else {
         const from =
-          afterData.data.orders[afterData.data.orders.length - 1].timestamp
-            .t_s;
-        if (from && from !== "never" && updateFilter) updateFilter(new Date(from * 1000));
+          afterData.data.orders[afterData.data.orders.length - 1].timestamp.t_s;
+        if (from && from !== "never" && updateFilter)
+          updateFilter(new Date(from * 1000));
       }
     },
     loadMorePrev: () => {
@@ -303,7 +304,8 @@ export function useInstanceOrders(
         const from =
           beforeData.data.orders[beforeData.data.orders.length - 1].timestamp
             .t_s;
-        if (from && from !== "never" && updateFilter) updateFilter(new Date(from * 1000));
+        if (from && from !== "never" && updateFilter)
+          updateFilter(new Date(from * 1000));
       }
     },
   };
@@ -312,9 +314,9 @@ export function useInstanceOrders(
     !beforeData || !afterData
       ? []
       : (beforeData || lastBefore).data.orders
-        .slice()
-        .reverse()
-        .concat((afterData || lastAfter).data.orders);
+          .slice()
+          .reverse()
+          .concat((afterData || lastAfter).data.orders);
   if (loadingAfter || loadingBefore) return { loading: true, data: { orders } };
   if (beforeData && afterData) {
     return { ok: true, data: { orders }, ...pagination };

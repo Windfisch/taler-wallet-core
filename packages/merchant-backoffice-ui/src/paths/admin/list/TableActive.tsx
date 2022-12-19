@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useState } from "preact/hooks";
@@ -34,57 +34,96 @@ interface Props {
   setInstanceName: (s: string) => void;
 }
 
-export function CardTable({ instances, onCreate, onUpdate, onPurge, setInstanceName, onDelete, selected }: Props): VNode {
+export function CardTable({
+  instances,
+  onCreate,
+  onUpdate,
+  onPurge,
+  setInstanceName,
+  onDelete,
+  selected,
+}: Props): VNode {
   const [actionQueue, actionQueueHandler] = useState<Actions[]>([]);
-  const [rowSelection, rowSelectionHandler] = useState<string[]>([])
+  const [rowSelection, rowSelectionHandler] = useState<string[]>([]);
 
   useEffect(() => {
-    if (actionQueue.length > 0 && !selected && actionQueue[0].type == 'DELETE') {
-      onDelete(actionQueue[0].element)
-      actionQueueHandler(actionQueue.slice(1))
+    if (
+      actionQueue.length > 0 &&
+      !selected &&
+      actionQueue[0].type == "DELETE"
+    ) {
+      onDelete(actionQueue[0].element);
+      actionQueueHandler(actionQueue.slice(1));
     }
-  }, [actionQueue, selected, onDelete])
+  }, [actionQueue, selected, onDelete]);
 
   useEffect(() => {
-    if (actionQueue.length > 0 && !selected && actionQueue[0].type == 'UPDATE') {
-      onUpdate(actionQueue[0].element.id)
-      actionQueueHandler(actionQueue.slice(1))
+    if (
+      actionQueue.length > 0 &&
+      !selected &&
+      actionQueue[0].type == "UPDATE"
+    ) {
+      onUpdate(actionQueue[0].element.id);
+      actionQueueHandler(actionQueue.slice(1));
     }
-  }, [actionQueue, selected, onUpdate])
+  }, [actionQueue, selected, onUpdate]);
 
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
-  return <div class="card has-table">
-    <header class="card-header">
-      <p class="card-header-title"><span class="icon"><i class="mdi mdi-desktop-mac" /></span><Translate>Instances</Translate></p>
+  return (
+    <div class="card has-table">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="icon">
+            <i class="mdi mdi-desktop-mac" />
+          </span>
+          <Translate>Instances</Translate>
+        </p>
 
-      <div class="card-header-icon" aria-label="more options">
-
-        <button class={rowSelection.length > 0 ? "button is-danger" : "is-hidden"}
-          type="button" onClick={(): void => actionQueueHandler(buildActions(instances, rowSelection, 'DELETE'))} >
-          <Translate>Delete</Translate>
-        </button>
-      </div>
-      <div class="card-header-icon" aria-label="more options">
-        <span class="has-tooltip-left" data-tooltip={i18n`add new instance`}>
-          <button class="button is-info" type="button" onClick={onCreate}>
-            <span class="icon is-small" ><i class="mdi mdi-plus mdi-36px" /></span>
+        <div class="card-header-icon" aria-label="more options">
+          <button
+            class={rowSelection.length > 0 ? "button is-danger" : "is-hidden"}
+            type="button"
+            onClick={(): void =>
+              actionQueueHandler(
+                buildActions(instances, rowSelection, "DELETE"),
+              )
+            }
+          >
+            <Translate>Delete</Translate>
           </button>
-        </span>
-      </div>
-
-    </header>
-    <div class="card-content">
-      <div class="b-table has-pagination">
-        <div class="table-wrapper has-mobile-cards">
-          {instances.length > 0 ?
-            <Table instances={instances} onPurge={onPurge} onUpdate={onUpdate} setInstanceName={setInstanceName} onDelete={onDelete} rowSelection={rowSelection} rowSelectionHandler={rowSelectionHandler} /> :
-            <EmptyTable />
-          }
+        </div>
+        <div class="card-header-icon" aria-label="more options">
+          <span class="has-tooltip-left" data-tooltip={i18n`add new instance`}>
+            <button class="button is-info" type="button" onClick={onCreate}>
+              <span class="icon is-small">
+                <i class="mdi mdi-plus mdi-36px" />
+              </span>
+            </button>
+          </span>
+        </div>
+      </header>
+      <div class="card-content">
+        <div class="b-table has-pagination">
+          <div class="table-wrapper has-mobile-cards">
+            {instances.length > 0 ? (
+              <Table
+                instances={instances}
+                onPurge={onPurge}
+                onUpdate={onUpdate}
+                setInstanceName={setInstanceName}
+                onDelete={onDelete}
+                rowSelection={rowSelection}
+                rowSelectionHandler={rowSelectionHandler}
+              />
+            ) : (
+              <EmptyTable />
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  );
 }
 interface TableProps {
   rowSelection: string[];
@@ -93,14 +132,23 @@ interface TableProps {
   onDelete: (id: MerchantBackend.Instances.Instance) => void;
   onPurge: (id: MerchantBackend.Instances.Instance) => void;
   rowSelectionHandler: StateUpdater<string[]>;
-  setInstanceName: (s:string) => void;
+  setInstanceName: (s: string) => void;
 }
 
 function toggleSelected<T>(id: T): (prev: T[]) => T[] {
-  return (prev: T[]): T[] => prev.indexOf(id) == -1 ? [...prev, id] : prev.filter(e => e != id)
+  return (prev: T[]): T[] =>
+    prev.indexOf(id) == -1 ? [...prev, id] : prev.filter((e) => e != id);
 }
 
-function Table({ rowSelection, rowSelectionHandler, setInstanceName, instances, onUpdate, onDelete, onPurge }: TableProps): VNode {
+function Table({
+  rowSelection,
+  rowSelectionHandler,
+  setInstanceName,
+  instances,
+  onUpdate,
+  onDelete,
+  onPurge,
+}: TableProps): VNode {
   return (
     <div class="table-container">
       <table class="table is-fullwidth is-striped is-hoverable is-fullwidth">
@@ -108,75 +156,127 @@ function Table({ rowSelection, rowSelectionHandler, setInstanceName, instances, 
           <tr>
             <th class="is-checkbox-cell">
               <label class="b-checkbox checkbox">
-                <input type="checkbox" checked={rowSelection.length === instances.length} onClick={(): void => rowSelectionHandler(rowSelection.length === instances.length ? [] : instances.map(i => i.id))} />
+                <input
+                  type="checkbox"
+                  checked={rowSelection.length === instances.length}
+                  onClick={(): void =>
+                    rowSelectionHandler(
+                      rowSelection.length === instances.length
+                        ? []
+                        : instances.map((i) => i.id),
+                    )
+                  }
+                />
                 <span class="check" />
               </label>
             </th>
-            <th><Translate>ID</Translate></th>
-            <th><Translate>Name</Translate></th>
+            <th>
+              <Translate>ID</Translate>
+            </th>
+            <th>
+              <Translate>Name</Translate>
+            </th>
             <th />
           </tr>
         </thead>
         <tbody>
-          {instances.map(i => {
-            return <tr key={i.id}>
-              <td class="is-checkbox-cell">
-                <label class="b-checkbox checkbox">
-                  <input type="checkbox" checked={rowSelection.indexOf(i.id) != -1} onClick={(): void => rowSelectionHandler(toggleSelected(i.id))} />
-                  <span class="check" />
-                </label>
-              </td>
-              <td><a href={`#/orders?instance=${i.id}`} onClick={(e) => {
-                setInstanceName(i.id);
-              }}>{i.id}</a></td>
-              <td >{i.name}</td>
-              <td class="is-actions-cell right-sticky">
-                <div class="buttons is-right">
-                  <button class="button is-small is-success jb-modal" type="button" onClick={(): void => onUpdate(i.id)}>
-                    <Translate>Edit</Translate>
-                  </button>
-                  {!i.deleted &&
-                  <button class="button is-small is-danger jb-modal is-outlined" type="button" onClick={(): void => onDelete(i)}>
-                    <Translate>Delete</Translate>
-                  </button>
-                  }
-                  {i.deleted &&
-                  <button class="button is-small is-danger jb-modal" type="button" onClick={(): void => onPurge(i)}>
-                    <Translate>Purge</Translate>
-                  </button>
-                  }
-                </div>
-              </td>
-            </tr>
+          {instances.map((i) => {
+            return (
+              <tr key={i.id}>
+                <td class="is-checkbox-cell">
+                  <label class="b-checkbox checkbox">
+                    <input
+                      type="checkbox"
+                      checked={rowSelection.indexOf(i.id) != -1}
+                      onClick={(): void =>
+                        rowSelectionHandler(toggleSelected(i.id))
+                      }
+                    />
+                    <span class="check" />
+                  </label>
+                </td>
+                <td>
+                  <a
+                    href={`#/orders?instance=${i.id}`}
+                    onClick={(e) => {
+                      setInstanceName(i.id);
+                    }}
+                  >
+                    {i.id}
+                  </a>
+                </td>
+                <td>{i.name}</td>
+                <td class="is-actions-cell right-sticky">
+                  <div class="buttons is-right">
+                    <button
+                      class="button is-small is-success jb-modal"
+                      type="button"
+                      onClick={(): void => onUpdate(i.id)}
+                    >
+                      <Translate>Edit</Translate>
+                    </button>
+                    {!i.deleted && (
+                      <button
+                        class="button is-small is-danger jb-modal is-outlined"
+                        type="button"
+                        onClick={(): void => onDelete(i)}
+                      >
+                        <Translate>Delete</Translate>
+                      </button>
+                    )}
+                    {i.deleted && (
+                      <button
+                        class="button is-small is-danger jb-modal"
+                        type="button"
+                        onClick={(): void => onPurge(i)}
+                      >
+                        <Translate>Purge</Translate>
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
           })}
-
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
 function EmptyTable(): VNode {
-  return <div class="content has-text-grey has-text-centered">
-    <p>
-      <span class="icon is-large"><i class="mdi mdi-emoticon-sad mdi-48px" /></span>
-    </p>
-    <p><Translate>There is no instances yet, add more pressing the + sign</Translate></p>
-  </div>
+  return (
+    <div class="content has-text-grey has-text-centered">
+      <p>
+        <span class="icon is-large">
+          <i class="mdi mdi-emoticon-sad mdi-48px" />
+        </span>
+      </p>
+      <p>
+        <Translate>
+          There is no instances yet, add more pressing the + sign
+        </Translate>
+      </p>
+    </div>
+  );
 }
-
 
 interface Actions {
   element: MerchantBackend.Instances.Instance;
-  type: 'DELETE' | 'UPDATE';
+  type: "DELETE" | "UPDATE";
 }
 
 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
-function buildActions(instances: MerchantBackend.Instances.Instance[], selected: string[], action: 'DELETE'): Actions[] {
-  return selected.map(id => instances.find(i => i.id === id))
+function buildActions(
+  instances: MerchantBackend.Instances.Instance[],
+  selected: string[],
+  action: "DELETE",
+): Actions[] {
+  return selected
+    .map((id) => instances.find((i) => i.id === id))
     .filter(notEmpty)
-    .map(id => ({ element: id, type: action }))
+    .map((id) => ({ element: id, type: action }));
 }

@@ -81,7 +81,7 @@ export function InputDuration<T>({
             era: () => "e",
           },
         },
-      }
+      },
     );
   }
 

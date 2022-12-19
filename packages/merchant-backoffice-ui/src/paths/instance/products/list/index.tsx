@@ -15,18 +15,21 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
+import { h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { Loading } from "../../../../components/exception/loading.js";
 import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend, WithId } from "../../../../declaration.js";
 import { HttpError } from "../../../../hooks/backend.js";
-import { useInstanceProducts, useProductAPI } from "../../../../hooks/product.js";
-import { useTranslator } from '../../../../i18n/index.js';
+import {
+  useInstanceProducts,
+  useProductAPI,
+} from "../../../../hooks/product.js";
+import { useTranslator } from "../../../../i18n/index.js";
 import { Notification } from "../../../../utils/types.js";
 import { CardTable } from "./Table.js";
 
@@ -37,44 +40,65 @@ interface Props {
   onSelect: (id: string) => void;
   onLoadError: (e: HttpError) => VNode;
 }
-export default function ProductList({ onUnauthorized, onLoadError, onCreate, onSelect, onNotFound }: Props): VNode {
-  const result = useInstanceProducts()
-  const { deleteProduct, updateProduct } = useProductAPI()
-  const [notif, setNotif] = useState<Notification | undefined>(undefined)
+export default function ProductList({
+  onUnauthorized,
+  onLoadError,
+  onCreate,
+  onSelect,
+  onNotFound,
+}: Props): VNode {
+  const result = useInstanceProducts();
+  const { deleteProduct, updateProduct } = useProductAPI();
+  const [notif, setNotif] = useState<Notification | undefined>(undefined);
 
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
-  if (result.clientError && result.isUnauthorized) return onUnauthorized()
-  if (result.clientError && result.isNotfound) return onNotFound()
-  if (result.loading) return <Loading />
-  if (!result.ok) return onLoadError(result)
+  if (result.clientError && result.isUnauthorized) return onUnauthorized();
+  if (result.clientError && result.isNotfound) return onNotFound();
+  if (result.loading) return <Loading />;
+  if (!result.ok) return onLoadError(result);
 
-  return <section class="section is-main-section">
-    <NotificationCard notification={notif} />
+  return (
+    <section class="section is-main-section">
+      <NotificationCard notification={notif} />
 
-    <CardTable instances={result.data}
-      onCreate={onCreate}
-      onUpdate={(id, prod) => updateProduct(id, prod)
-        .then(() => setNotif({
-          message: i18n`product updated successfully`,
-          type: "SUCCESS"
-        })).catch((error) => setNotif({
-          message: i18n`could not update the product`,
-          type: "ERROR",
-          description: error.message
-        }))
-      }
-      onSelect={(product) => onSelect(product.id)}
-      onDelete={(prod: (MerchantBackend.Products.ProductDetail & WithId)) => deleteProduct(prod.id)
-        .then(() => setNotif({
-          message: i18n`product delete successfully`,
-          type: "SUCCESS"
-        })).catch((error) => setNotif({
-          message: i18n`could not delete the product`,
-          type: "ERROR",
-          description: error.message
-        }))
-      }
-    />
-  </section>
+      <CardTable
+        instances={result.data}
+        onCreate={onCreate}
+        onUpdate={(id, prod) =>
+          updateProduct(id, prod)
+            .then(() =>
+              setNotif({
+                message: i18n`product updated successfully`,
+                type: "SUCCESS",
+              }),
+            )
+            .catch((error) =>
+              setNotif({
+                message: i18n`could not update the product`,
+                type: "ERROR",
+                description: error.message,
+              }),
+            )
+        }
+        onSelect={(product) => onSelect(product.id)}
+        onDelete={(prod: MerchantBackend.Products.ProductDetail & WithId) =>
+          deleteProduct(prod.id)
+            .then(() =>
+              setNotif({
+                message: i18n`product delete successfully`,
+                type: "SUCCESS",
+              }),
+            )
+            .catch((error) =>
+              setNotif({
+                message: i18n`could not delete the product`,
+                type: "ERROR",
+                description: error.message,
+              }),
+            )
+        }
+      />
+    </section>
+  );
 }

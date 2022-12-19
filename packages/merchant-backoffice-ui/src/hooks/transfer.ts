@@ -35,7 +35,7 @@ async function transferFetcher<T>(
   payto_uri?: string,
   verified?: string,
   position?: string,
-  delta?: number
+  delta?: number,
 ): Promise<HttpResponseOk<T>> {
   const params: any = {};
   if (payto_uri !== undefined) params.payto_uri = payto_uri;
@@ -55,28 +55,31 @@ export function useTransferAPI(): TransferAPI {
 
   const { url, token } = !admin
     ? {
-      url: baseUrl,
-      token: adminToken,
-    }
+        url: baseUrl,
+        token: adminToken,
+      }
     : {
-      url: `${baseUrl}/instances/${id}`,
-      token: instanceToken,
-    };
+        url: `${baseUrl}/instances/${id}`,
+        token: instanceToken,
+      };
 
   const informTransfer = async (
-    data: MerchantBackend.Transfers.TransferInformation
+    data: MerchantBackend.Transfers.TransferInformation,
   ): Promise<
     HttpResponseOk<MerchantBackend.Transfers.MerchantTrackTransferResponse>
   > => {
-    const res = await request<MerchantBackend.Transfers.MerchantTrackTransferResponse>(
-      `${url}/private/transfers`, {
-      method: "post",
-      token,
-      data,
-    });
+    const res =
+      await request<MerchantBackend.Transfers.MerchantTrackTransferResponse>(
+        `${url}/private/transfers`,
+        {
+          method: "post",
+          token,
+          data,
+        },
+      );
 
     await mutateAll(/.*private\/transfers.*/);
-    return res
+    return res;
   };
 
   return { informTransfer };
@@ -84,7 +87,7 @@ export function useTransferAPI(): TransferAPI {
 
 export interface TransferAPI {
   informTransfer: (
-    data: MerchantBackend.Transfers.TransferInformation
+    data: MerchantBackend.Transfers.TransferInformation,
   ) => Promise<
     HttpResponseOk<MerchantBackend.Transfers.MerchantTrackTransferResponse>
   >;
@@ -98,7 +101,7 @@ export interface InstanceTransferFilter {
 
 export function useInstanceTransfers(
   args?: InstanceTransferFilter,
-  updatePosition?: (id: string) => void
+  updatePosition?: (id: string) => void,
 ): HttpResponsePaginated<MerchantBackend.Transfers.TransferList> {
   const { url: baseUrl, token: baseToken } = useBackendContext();
   const { token: instanceToken, id, admin } = useInstanceContext();
@@ -133,7 +136,7 @@ export function useInstanceTransfers(
       args?.position,
       totalBefore,
     ],
-    transferFetcher
+    transferFetcher,
   );
   const {
     data: afterData,
@@ -149,7 +152,7 @@ export function useInstanceTransfers(
       args?.position,
       -totalAfter,
     ],
-    transferFetcher
+    transferFetcher,
   );
 
   //this will save last result
@@ -168,8 +171,10 @@ export function useInstanceTransfers(
   if (afterError) return afterError;
 
   // if the query returns less that we ask, then we have reach the end or beginning
-  const isReachingEnd = afterData && afterData.data.transfers.length < totalAfter;
-  const isReachingStart = args?.position === undefined ||
+  const isReachingEnd =
+    afterData && afterData.data.transfers.length < totalAfter;
+  const isReachingStart =
+    args?.position === undefined ||
     (beforeData && beforeData.data.transfers.length < totalBefore);
 
   const pagination = {
@@ -180,10 +185,10 @@ export function useInstanceTransfers(
       if (afterData.data.transfers.length < MAX_RESULT_SIZE) {
         setPageAfter(pageAfter + 1);
       } else {
-        const from =
-          `${afterData.data
-            .transfers[afterData.data.transfers.length - 1]
-            .transfer_serial_id}`;
+        const from = `${
+          afterData.data.transfers[afterData.data.transfers.length - 1]
+            .transfer_serial_id
+        }`;
         if (from && updatePosition) updatePosition(from);
       }
     },
@@ -192,10 +197,10 @@ export function useInstanceTransfers(
       if (beforeData.data.transfers.length < MAX_RESULT_SIZE) {
         setPageBefore(pageBefore + 1);
       } else if (beforeData) {
-        const from =
-          `${beforeData.data
-            .transfers[beforeData.data.transfers.length - 1]
-            .transfer_serial_id}`;
+        const from = `${
+          beforeData.data.transfers[beforeData.data.transfers.length - 1]
+            .transfer_serial_id
+        }`;
         if (from && updatePosition) updatePosition(from);
       }
     },
@@ -205,9 +210,9 @@ export function useInstanceTransfers(
     !beforeData || !afterData
       ? []
       : (beforeData || lastBefore).data.transfers
-        .slice()
-        .reverse()
-        .concat((afterData || lastAfter).data.transfers);
+          .slice()
+          .reverse()
+          .concat((afterData || lastAfter).data.transfers);
   if (loadingAfter || loadingBefore)
     return { loading: true, data: { transfers } };
   if (beforeData && afterData) {

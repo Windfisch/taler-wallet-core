@@ -87,7 +87,7 @@ export function CreatedSuccessfully({
                     ? "never"
                     : format(
                         entity.tip_expiration.t_s * 1000,
-                        "yyyy/MM/dd HH:mm:ss"
+                        "yyyy/MM/dd HH:mm:ss",
                       )
                 }
               />

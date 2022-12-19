@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { ComponentChildren, h } from "preact";
 import { useConfigContext } from "../../context/config.js";
 import { Amount } from "../../declaration.js";
@@ -31,17 +31,36 @@ export interface Props<T> extends InputProps<T> {
   side?: ComponentChildren;
 }
 
-export function InputCurrency<T>({ name, readonly, label, placeholder, help, tooltip, expand, addonAfter, children, side }: Props<keyof T>) {
-  const config = useConfigContext()
-  return <InputWithAddon<T> name={name} readonly={readonly} addonBefore={config.currency}
-    side={side}
-    label={label} placeholder={placeholder} help={help} tooltip={tooltip}
-    addonAfter={addonAfter}
-    inputType='number' expand={expand}
-    toStr={(v?: Amount) => v?.split(':')[1] || ''}
-    fromStr={(v: string) => !v ? '' : `${config.currency}:${v}`}
-    inputExtra={{ min: 0 }}
-    children={children}
-  />
+export function InputCurrency<T>({
+  name,
+  readonly,
+  label,
+  placeholder,
+  help,
+  tooltip,
+  expand,
+  addonAfter,
+  children,
+  side,
+}: Props<keyof T>) {
+  const config = useConfigContext();
+  return (
+    <InputWithAddon<T>
+      name={name}
+      readonly={readonly}
+      addonBefore={config.currency}
+      side={side}
+      label={label}
+      placeholder={placeholder}
+      help={help}
+      tooltip={tooltip}
+      addonAfter={addonAfter}
+      inputType="number"
+      expand={expand}
+      toStr={(v?: Amount) => v?.split(":")[1] || ""}
+      fromStr={(v: string) => (!v ? "" : `${config.currency}:${v}`)}
+      inputExtra={{ min: 0 }}
+      children={children}
+    />
+  );
 }
-

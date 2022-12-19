@@ -15,13 +15,13 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createContext, h, VNode } from 'preact'
-import { useContext, useEffect } from 'preact/hooks'
-import { useLang } from '../hooks'
+import { createContext, h, VNode } from "preact";
+import { useContext, useEffect } from "preact/hooks";
+import { useLang } from "../hooks";
 import * as jedLib from "jed";
 import { strings } from "../i18n/strings";
 
@@ -31,29 +31,36 @@ interface Type {
   changeLanguage: (l: string) => void;
 }
 const initial = {
-  lang: 'en',
+  lang: "en",
   handler: null,
   changeLanguage: () => {
     // do not change anything
-  }
-}
-const Context = createContext<Type>(initial)
+  },
+};
+const Context = createContext<Type>(initial);
 
 interface Props {
-  initial?: string,
-  children: any,
-  forceLang?: string
+  initial?: string;
+  children: any;
+  forceLang?: string;
 }
 
-export const TranslationProvider = ({ initial, children, forceLang }: Props): VNode => {
-  const [lang, changeLanguage] = useLang(initial)
+export const TranslationProvider = ({
+  initial,
+  children,
+  forceLang,
+}: Props): VNode => {
+  const [lang, changeLanguage] = useLang(initial);
   useEffect(() => {
     if (forceLang) {
-      changeLanguage(forceLang)
+      changeLanguage(forceLang);
     }
-  })
+  });
   const handler = new jedLib.Jed(strings[lang]);
-  return h(Context.Provider, { value: { lang, handler, changeLanguage }, children });
-}
+  return h(Context.Provider, {
+    value: { lang, handler, changeLanguage },
+    children,
+  });
+};
 
 export const useTranslationContext = (): Type => useContext(Context);

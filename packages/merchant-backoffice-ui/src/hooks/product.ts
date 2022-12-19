@@ -24,21 +24,21 @@ import {
   HttpResponseOk,
   multiFetcher,
   request,
-  useMatchMutate
+  useMatchMutate,
 } from "./backend.js";
 
 export interface ProductAPI {
   createProduct: (
-    data: MerchantBackend.Products.ProductAddDetail
+    data: MerchantBackend.Products.ProductAddDetail,
   ) => Promise<void>;
   updateProduct: (
     id: string,
-    data: MerchantBackend.Products.ProductPatchDetail
+    data: MerchantBackend.Products.ProductPatchDetail,
   ) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   lockProduct: (
     id: string,
-    data: MerchantBackend.Products.LockRequest
+    data: MerchantBackend.Products.LockRequest,
   ) => Promise<void>;
 }
 
@@ -49,11 +49,11 @@ export function useProductAPI(): ProductAPI {
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
-    ? { url: baseUrl, token: adminToken, }
-    : { url: `${baseUrl}/instances/${id}`, token: instanceToken, };
+    ? { url: baseUrl, token: adminToken }
+    : { url: `${baseUrl}/instances/${id}`, token: instanceToken };
 
   const createProduct = async (
-    data: MerchantBackend.Products.ProductAddDetail
+    data: MerchantBackend.Products.ProductAddDetail,
   ): Promise<void> => {
     const res = await request(`${url}/private/products`, {
       method: "post",
@@ -66,7 +66,7 @@ export function useProductAPI(): ProductAPI {
 
   const updateProduct = async (
     productId: string,
-    data: MerchantBackend.Products.ProductPatchDetail
+    data: MerchantBackend.Products.ProductPatchDetail,
   ): Promise<void> => {
     const r = await request(`${url}/private/products/${productId}`, {
       method: "patch",
@@ -87,7 +87,7 @@ export function useProductAPI(): ProductAPI {
 
   const lockProduct = async (
     productId: string,
-    data: MerchantBackend.Products.LockRequest
+    data: MerchantBackend.Products.LockRequest,
   ): Promise<void> => {
     await request(`${url}/private/products/${productId}/lock`, {
       method: "post",
@@ -108,8 +108,8 @@ export function useInstanceProducts(): HttpResponse<
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
-    ? { url: baseUrl, token: baseToken, }
-    : { url: `${baseUrl}/instances/${id}`, token: instanceToken, };
+    ? { url: baseUrl, token: baseToken }
+    : { url: `${baseUrl}/instances/${id}`, token: instanceToken };
 
   const { data: list, error: listError } = useSWR<
     HttpResponseOk<MerchantBackend.Products.InventorySummaryResponse>,
@@ -123,7 +123,7 @@ export function useInstanceProducts(): HttpResponse<
   });
 
   const paths = (list?.data.products || []).map(
-    (p) => `/private/products/${p.product_id}`
+    (p) => `/private/products/${p.product_id}`,
   );
   const { data: products, error: productError } = useSWR<
     HttpResponseOk<MerchantBackend.Products.ProductDetail>[],
@@ -135,7 +135,6 @@ export function useInstanceProducts(): HttpResponse<
     revalidateOnReconnect: false,
     refreshWhenOffline: false,
   });
-
 
   if (listError) return listError;
   if (productError) return productError;
@@ -154,20 +153,20 @@ export function useInstanceProducts(): HttpResponse<
 }
 
 export function useProductDetails(
-  productId: string
+  productId: string,
 ): HttpResponse<MerchantBackend.Products.ProductDetail> {
   const { url: baseUrl, token: baseToken } = useBackendContext();
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
     ? {
-      url: baseUrl,
-      token: baseToken,
-    }
+        url: baseUrl,
+        token: baseToken,
+      }
     : {
-      url: `${baseUrl}/instances/${id}`,
-      token: instanceToken,
-    };
+        url: `${baseUrl}/instances/${id}`,
+        token: instanceToken,
+      };
 
   const { data, error, isValidating } = useSWR<
     HttpResponseOk<MerchantBackend.Products.ProductDetail>,

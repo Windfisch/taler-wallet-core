@@ -131,7 +131,7 @@ export function InstanceRoutes({ id, admin, setInstanceName }: Props): VNode {
 
   const value = useMemo(
     () => ({ id, token, admin, changeToken }),
-    [id, token, admin]
+    [id, token, admin],
   );
 
   function ServerErrorRedirectTo(to: InstancePaths | AdminPaths) {
@@ -451,7 +451,7 @@ function AdminInstanceUpdatePage({
   };
   const value = useMemo(
     () => ({ id, token, admin: true, changeToken }),
-    [id, token]
+    [id, token],
   );
   const i18n = useTranslator();
 

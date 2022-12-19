@@ -15,46 +15,53 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { Fragment, h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
+import { Fragment, h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { useInstanceDetails } from "../../../../hooks/instance.js";
 import { useTransferAPI } from "../../../../hooks/transfer.js";
-import { useTranslator } from '../../../../i18n/index.js';
+import { useTranslator } from "../../../../i18n/index.js";
 import { Notification } from "../../../../utils/types.js";
 import { CreatePage } from "./CreatePage.js";
 
-export type Entity = MerchantBackend.Transfers.TransferInformation
+export type Entity = MerchantBackend.Transfers.TransferInformation;
 interface Props {
   onBack?: () => void;
   onConfirm: () => void;
 }
 
-export default function CreateTransfer({onConfirm, onBack}:Props): VNode {
-  const { informTransfer } = useTransferAPI()
-  const [notif, setNotif] = useState<Notification | undefined>(undefined)
-  const i18n = useTranslator()
-  const instance = useInstanceDetails()
-  const accounts = !instance.ok ? [] : instance.data.accounts.map(a => a.payto_uri)
+export default function CreateTransfer({ onConfirm, onBack }: Props): VNode {
+  const { informTransfer } = useTransferAPI();
+  const [notif, setNotif] = useState<Notification | undefined>(undefined);
+  const i18n = useTranslator();
+  const instance = useInstanceDetails();
+  const accounts = !instance.ok
+    ? []
+    : instance.data.accounts.map((a) => a.payto_uri);
 
-  return <>
-    <NotificationCard notification={notif} />
-    <CreatePage
-      onBack={onBack}
-      accounts={accounts}
-      onCreate={(request: MerchantBackend.Transfers.TransferInformation) => {
-        return informTransfer(request).then(() => onConfirm()).catch((error) => {
-          setNotif({
-            message: i18n`could not inform transfer`,
-            type: "ERROR",
-            description: error.message
-          })
-        })
-      }} />
-  </>
+  return (
+    <>
+      <NotificationCard notification={notif} />
+      <CreatePage
+        onBack={onBack}
+        accounts={accounts}
+        onCreate={(request: MerchantBackend.Transfers.TransferInformation) => {
+          return informTransfer(request)
+            .then(() => onConfirm())
+            .catch((error) => {
+              setNotif({
+                message: i18n`could not inform transfer`,
+                type: "ERROR",
+                description: error.message,
+              });
+            });
+        }}
+      />
+    </>
+  );
 }

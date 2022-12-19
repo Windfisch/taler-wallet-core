@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import emptyImage from "../../assets/empty.png";
@@ -26,74 +26,97 @@ import { Translate, useTranslator } from "../../i18n/index.js";
 import { FormErrors, FormProvider } from "./FormProvider.js";
 import { InputWithAddon } from "./InputWithAddon.js";
 
-type Entity = MerchantBackend.Products.ProductDetail & WithId
+type Entity = MerchantBackend.Products.ProductDetail & WithId;
 
 export interface Props {
   selected?: Entity;
   onChange: (p?: Entity) => void;
-  products: (MerchantBackend.Products.ProductDetail & WithId)[],
+  products: (MerchantBackend.Products.ProductDetail & WithId)[];
 }
 
 interface ProductSearch {
   name: string;
 }
 
-export function InputSearchProduct({ selected, onChange, products }: Props): VNode {
-  const [prodForm, setProdName] = useState<Partial<ProductSearch>>({ name: '' })
+export function InputSearchProduct({
+  selected,
+  onChange,
+  products,
+}: Props): VNode {
+  const [prodForm, setProdName] = useState<Partial<ProductSearch>>({
+    name: "",
+  });
 
   const errors: FormErrors<ProductSearch> = {
-    name: undefined
-  }
-  const i18n = useTranslator()
-
+    name: undefined,
+  };
+  const i18n = useTranslator();
 
   if (selected) {
-    return <article class="media">
-      <figure class="media-left">
-        <p class="image is-128x128">
-          <img src={selected.image ? selected.image : emptyImage} />
-        </p>
-      </figure>
-      <div class="media-content">
-        <div class="content">
-          <p class="media-meta"><Translate>Product id</Translate>: <b>{selected.id}</b></p>
-          <p><Translate>Description</Translate>: {selected.description}</p>
-          <div class="buttons is-right mt-5">
-            <button class="button is-info" onClick={() => onChange(undefined)}>clear</button>
+    return (
+      <article class="media">
+        <figure class="media-left">
+          <p class="image is-128x128">
+            <img src={selected.image ? selected.image : emptyImage} />
+          </p>
+        </figure>
+        <div class="media-content">
+          <div class="content">
+            <p class="media-meta">
+              <Translate>Product id</Translate>: <b>{selected.id}</b>
+            </p>
+            <p>
+              <Translate>Description</Translate>: {selected.description}
+            </p>
+            <div class="buttons is-right mt-5">
+              <button
+                class="button is-info"
+                onClick={() => onChange(undefined)}
+              >
+                clear
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </article>
+      </article>
+    );
   }
 
-  return <FormProvider<ProductSearch> errors={errors} object={prodForm} valueHandler={setProdName} >
-
-    <InputWithAddon<ProductSearch>
-      name="name"
-      label={i18n`Product`}
-      tooltip={i18n`search products by it's description or id`}
-      addonAfter={<span class="icon" ><i class="mdi mdi-magnify" /></span>}
+  return (
+    <FormProvider<ProductSearch>
+      errors={errors}
+      object={prodForm}
+      valueHandler={setProdName}
     >
-      <div>
-        <ProductList
-          name={prodForm.name}
-          list={products}
-          onSelect={(p) => {
-            setProdName({ name: '' })
-            onChange(p)
-          }}
-        />
-      </div>
-    </InputWithAddon>
-
-  </FormProvider>
-
+      <InputWithAddon<ProductSearch>
+        name="name"
+        label={i18n`Product`}
+        tooltip={i18n`search products by it's description or id`}
+        addonAfter={
+          <span class="icon">
+            <i class="mdi mdi-magnify" />
+          </span>
+        }
+      >
+        <div>
+          <ProductList
+            name={prodForm.name}
+            list={products}
+            onSelect={(p) => {
+              setProdName({ name: "" });
+              onChange(p);
+            }}
+          />
+        </div>
+      </InputWithAddon>
+    </FormProvider>
+  );
 }
 
 interface ProductListProps {
   name?: string;
   onSelect: (p: MerchantBackend.Products.ProductDetail & WithId) => void;
-  list: (MerchantBackend.Products.ProductDetail & WithId)[]
+  list: (MerchantBackend.Products.ProductDetail & WithId)[];
 }
 
 function ProductList({ name, onSelect, list }: ProductListProps) {
@@ -102,37 +125,61 @@ function ProductList({ name, onSelect, list }: ProductListProps) {
       this BR is added to occupy the space that will be added when the 
       dropdown appears
     */
-    return <div ><br /></div>
+    return (
+      <div>
+        <br />
+      </div>
+    );
   }
-  const filtered = list.filter(p => p.id.includes(name) || p.description.includes(name))
+  const filtered = list.filter(
+    (p) => p.id.includes(name) || p.description.includes(name),
+  );
 
-  return <div class="dropdown is-active">
-    <div class="dropdown-menu" id="dropdown-menu" role="menu" style={{ minWidth: '20rem' }}>
-      <div class="dropdown-content">
-        {!filtered.length ?
-          <div class="dropdown-item" >
-            <Translate>no products found with that description</Translate>
-          </div> :
-          filtered.map(p => (
-            <div key={p.id} class="dropdown-item" onClick={() => onSelect(p)} style={{ cursor: 'pointer' }}>
-              <article class="media">
-                <div class="media-left">
-                  <div class="image" style={{ minWidth: 64 }}><img src={p.image ? p.image : emptyImage} style={{ width: 64, height: 64 }} /></div>
-                </div>
-                <div class="media-content">
-                  <div class="content">
-                    <p>
-                      <strong>{p.id}</strong> <small>{p.price}</small>
-                      <br />
-                      {p.description}
-                    </p>
-                  </div>
-                </div>
-              </article>
+  return (
+    <div class="dropdown is-active">
+      <div
+        class="dropdown-menu"
+        id="dropdown-menu"
+        role="menu"
+        style={{ minWidth: "20rem" }}
+      >
+        <div class="dropdown-content">
+          {!filtered.length ? (
+            <div class="dropdown-item">
+              <Translate>no products found with that description</Translate>
             </div>
-          ))
-        }
+          ) : (
+            filtered.map((p) => (
+              <div
+                key={p.id}
+                class="dropdown-item"
+                onClick={() => onSelect(p)}
+                style={{ cursor: "pointer" }}
+              >
+                <article class="media">
+                  <div class="media-left">
+                    <div class="image" style={{ minWidth: 64 }}>
+                      <img
+                        src={p.image ? p.image : emptyImage}
+                        style={{ width: 64, height: 64 }}
+                      />
+                    </div>
+                  </div>
+                  <div class="media-content">
+                    <div class="content">
+                      <p>
+                        <strong>{p.id}</strong> <small>{p.price}</small>
+                        <br />
+                        {p.description}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
-  </div>
+  );
 }

@@ -14,9 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { ComponentChildren, h, VNode } from "preact";
 
 interface Props {
@@ -25,25 +25,33 @@ interface Props {
   children: ComponentChildren;
 }
 
-export function CreatedSuccessfully({ children, onConfirm, onCreateAnother }: Props): VNode {
-  return <div class="columns is-fullwidth is-vcentered mt-3">
-    <div class="column" />
-    <div class="column is-four-fifths">
-      <div class="card">
-        <header class="card-header has-background-success">
-          <p class="card-header-title has-text-white-ter">
-            Success.
-          </p>
-        </header>
-        <div class="card-content">
-          {children}
+export function CreatedSuccessfully({
+  children,
+  onConfirm,
+  onCreateAnother,
+}: Props): VNode {
+  return (
+    <div class="columns is-fullwidth is-vcentered mt-3">
+      <div class="column" />
+      <div class="column is-four-fifths">
+        <div class="card">
+          <header class="card-header has-background-success">
+            <p class="card-header-title has-text-white-ter">Success.</p>
+          </header>
+          <div class="card-content">{children}</div>
+        </div>
+        <div class="buttons is-right">
+          {onCreateAnother && (
+            <button class="button is-info" onClick={onCreateAnother}>
+              Create another
+            </button>
+          )}
+          <button class="button is-info" onClick={onConfirm}>
+            Continue
+          </button>
         </div>
       </div>
-        <div class="buttons is-right">
-          {onCreateAnother && <button class="button is-info" onClick={onCreateAnother}>Create another</button>}
-          <button class="button is-info" onClick={onConfirm}>Continue</button>
-        </div>
+      <div class="column" />
     </div>
-    <div class="column" />
-  </div>
+  );
 }

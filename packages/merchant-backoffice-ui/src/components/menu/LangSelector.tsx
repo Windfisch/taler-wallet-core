@@ -15,59 +15,78 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import langIcon from '../../assets/icons/languageicon.svg';
+import langIcon from "../../assets/icons/languageicon.svg";
 import { useTranslationContext } from "../../context/translation.js";
-import { strings as messages } from '../../i18n/strings'
+import { strings as messages } from "../../i18n/strings";
 
 type LangsNames = {
-  [P in keyof typeof messages]: string
-}
+  [P in keyof typeof messages]: string;
+};
 
 const names: LangsNames = {
-  es: 'Español [es]',
-  en: 'English [en]',
-  fr: 'Français [fr]',
-  de: 'Deutsch [de]',
-  sv: 'Svenska [sv]',
-  it: 'Italiano [it]',
-}
+  es: "Español [es]",
+  en: "English [en]",
+  fr: "Français [fr]",
+  de: "Deutsch [de]",
+  sv: "Svenska [sv]",
+  it: "Italiano [it]",
+};
 
 function getLangName(s: keyof LangsNames | string) {
-  if (names[s]) return names[s]
-  return s
+  if (names[s]) return names[s];
+  return s;
 }
 
 export function LangSelector(): VNode {
-  const [updatingLang, setUpdatingLang] = useState(false)
-  const { lang, changeLanguage } = useTranslationContext()
+  const [updatingLang, setUpdatingLang] = useState(false);
+  const { lang, changeLanguage } = useTranslationContext();
 
-  return <div class="dropdown is-active ">
-    <div class="dropdown-trigger">
-      <button class="button has-tooltip-left" 
-        data-tooltip="change language selection"
-        aria-haspopup="true" 
-        aria-controls="dropdown-menu" onClick={() => setUpdatingLang(!updatingLang)}>
-        <div class="icon is-small is-left">
-          <img src={langIcon} />
-        </div>
-        <span>{getLangName(lang)}</span>
-        <div class="icon is-right">
-          <i class="mdi mdi-chevron-down" />
-        </div>
-      </button>
-    </div>
-    {updatingLang && <div class="dropdown-menu" id="dropdown-menu" role="menu">
-      <div class="dropdown-content">
-        {Object.keys(messages)
-          .filter((l) => l !== lang)
-          .map(l => <a key={l} class="dropdown-item" value={l} onClick={() => { changeLanguage(l); setUpdatingLang(false) }}>{getLangName(l)}</a>)}
+  return (
+    <div class="dropdown is-active ">
+      <div class="dropdown-trigger">
+        <button
+          class="button has-tooltip-left"
+          data-tooltip="change language selection"
+          aria-haspopup="true"
+          aria-controls="dropdown-menu"
+          onClick={() => setUpdatingLang(!updatingLang)}
+        >
+          <div class="icon is-small is-left">
+            <img src={langIcon} />
+          </div>
+          <span>{getLangName(lang)}</span>
+          <div class="icon is-right">
+            <i class="mdi mdi-chevron-down" />
+          </div>
+        </button>
       </div>
-    </div>}
-  </div>
+      {updatingLang && (
+        <div class="dropdown-menu" id="dropdown-menu" role="menu">
+          <div class="dropdown-content">
+            {Object.keys(messages)
+              .filter((l) => l !== lang)
+              .map((l) => (
+                <a
+                  key={l}
+                  class="dropdown-item"
+                  value={l}
+                  onClick={() => {
+                    changeLanguage(l);
+                    setUpdatingLang(false);
+                  }}
+                >
+                  {getLangName(l)}
+                </a>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -15,39 +15,41 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, FunctionalComponent } from 'preact';
+import { h, VNode, FunctionalComponent } from "preact";
 import { CreatedSuccessfully as TestedComponent } from "./CreatedSuccessfully.js";
 
-
 export default {
-  title: 'Pages/Reserve/CreatedSuccessfully',
+  title: "Pages/Reserve/CreatedSuccessfully",
   component: TestedComponent,
   argTypes: {
-    onCreate: { action: 'onCreate' },
-    onBack: { action: 'onBack' },
+    onCreate: { action: "onCreate" },
+    onBack: { action: "onBack" },
   },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
 export const Example = createExample(TestedComponent, {
   entity: {
     request: {
-      exchange_url: 'http://exchange.taler/',
-      initial_balance: 'TESTKUDOS:1',
-      wire_method: 'x-taler-bank',
+      exchange_url: "http://exchange.taler/",
+      initial_balance: "TESTKUDOS:1",
+      wire_method: "x-taler-bank",
     },
     response: {
-      payto_uri: 'payto://x-taler-bank/bank.taler:8080/exchange_account',
-      reserve_pub: 'WEQWDASDQWEASDADASDQWEQWEASDAS'
-    }
-  }
+      payto_uri: "payto://x-taler-bank/bank.taler:8080/exchange_account",
+      reserve_pub: "WEQWDASDQWEASDADASDQWEQWEASDAS",
+    },
+  },
 });

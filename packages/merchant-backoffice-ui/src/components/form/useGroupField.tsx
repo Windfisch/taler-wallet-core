@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { useFormContext } from "./FormProvider.js";
 
@@ -27,14 +27,15 @@ interface Use {
 
 export function useGroupField<T>(name: keyof T): Use {
   const f = useFormContext<T>();
-  if (!f)
-    return {};
+  if (!f) return {};
 
   return {
-    hasError: readField(f.errors, String(name))
+    hasError: readField(f.errors, String(name)),
   };
 }
 
 const readField = (object: any, name: string) => {
-  return name.split('.').reduce((prev, current) => prev && prev[current], object)
-}
+  return name
+    .split(".")
+    .reduce((prev, current) => prev && prev[current], object);
+};

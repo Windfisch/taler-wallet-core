@@ -15,18 +15,23 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, Fragment } from 'preact';
-import { useState } from 'preact/hooks';
+import { h, VNode, Fragment } from "preact";
+import { useState } from "preact/hooks";
 import { Loading } from "../../../../components/exception/loading.js";
 import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend, WithId } from "../../../../declaration.js";
 import { HttpError } from "../../../../hooks/backend.js";
-import { InstanceOrderFilter, useInstanceOrders, useOrderAPI, useOrderDetails } from "../../../../hooks/order.js";
-import { useTranslator } from '../../../../i18n/index.js';
+import {
+  InstanceOrderFilter,
+  useInstanceOrders,
+  useOrderAPI,
+  useOrderDetails,
+} from "../../../../hooks/order.js";
+import { useTranslator } from "../../../../i18n/index.js";
 import { Notification } from "../../../../utils/types.js";
 import { RefundModal } from "./Table.js";
 import { ListPage } from "./ListPage.js";
@@ -39,107 +44,133 @@ interface Props {
   onCreate: () => void;
 }
 
-export default function ({ onUnauthorized, onLoadError, onCreate, onSelect, onNotFound }: Props): VNode {
-  const [filter, setFilter] = useState<InstanceOrderFilter>({})
-  const [orderToBeRefunded, setOrderToBeRefunded] = useState<MerchantBackend.Orders.OrderHistoryEntry | undefined>(undefined)
+export default function ({
+  onUnauthorized,
+  onLoadError,
+  onCreate,
+  onSelect,
+  onNotFound,
+}: Props): VNode {
+  const [filter, setFilter] = useState<InstanceOrderFilter>({});
+  const [orderToBeRefunded, setOrderToBeRefunded] = useState<
+    MerchantBackend.Orders.OrderHistoryEntry | undefined
+  >(undefined);
 
-  const setNewDate = (date?: Date) => setFilter(prev => ({ ...prev, date }))
+  const setNewDate = (date?: Date) => setFilter((prev) => ({ ...prev, date }));
 
-  const result = useInstanceOrders(filter, setNewDate)
-  const { refundOrder, getPaymentURL } = useOrderAPI()
+  const result = useInstanceOrders(filter, setNewDate);
+  const { refundOrder, getPaymentURL } = useOrderAPI();
 
-  const [notif, setNotif] = useState<Notification | undefined>(undefined)
+  const [notif, setNotif] = useState<Notification | undefined>(undefined);
 
-  if (result.clientError && result.isUnauthorized) return onUnauthorized()
-  if (result.clientError && result.isNotfound) return onNotFound()
-  if (result.loading) return <Loading />
-  if (!result.ok) return onLoadError(result)
+  if (result.clientError && result.isUnauthorized) return onUnauthorized();
+  if (result.clientError && result.isNotfound) return onNotFound();
+  if (result.loading) return <Loading />;
+  if (!result.ok) return onLoadError(result);
 
-  const isPaidActive = filter.paid === 'yes' ? "is-active" : ''
-  const isRefundedActive = filter.refunded === 'yes' ? "is-active" : ''
-  const isNotWiredActive = filter.wired === 'no' ? "is-active" : ''
-  const isAllActive = filter.paid === undefined && filter.refunded === undefined && filter.wired === undefined ? 'is-active' : ''
+  const isPaidActive = filter.paid === "yes" ? "is-active" : "";
+  const isRefundedActive = filter.refunded === "yes" ? "is-active" : "";
+  const isNotWiredActive = filter.wired === "no" ? "is-active" : "";
+  const isAllActive =
+    filter.paid === undefined &&
+    filter.refunded === undefined &&
+    filter.wired === undefined
+      ? "is-active"
+      : "";
 
-  const i18n = useTranslator()
-  const [errorOrderId, setErrorOrderId] = useState<string | undefined>(undefined)
+  const i18n = useTranslator();
+  const [errorOrderId, setErrorOrderId] = useState<string | undefined>(
+    undefined,
+  );
 
   async function testIfOrderExistAndSelect(orderId: string) {
     if (!orderId) {
-      setErrorOrderId(i18n`Enter an order id`)
+      setErrorOrderId(i18n`Enter an order id`);
       return;
     }
     try {
-      await getPaymentURL(orderId)
-      onSelect(orderId)
-      setErrorOrderId(undefined)
+      await getPaymentURL(orderId);
+      onSelect(orderId);
+      setErrorOrderId(undefined);
     } catch {
-      setErrorOrderId(i18n`order not found`)
+      setErrorOrderId(i18n`order not found`);
     }
   }
 
-  return <Fragment>
-    <NotificationCard notification={notif} />
+  return (
+    <Fragment>
+      <NotificationCard notification={notif} />
 
-    <ListPage
-      orders={result.data.orders.map(o => ({ ...o, id: o.order_id }))}
-      onLoadMoreBefore={result.loadMorePrev} hasMoreBefore={!result.isReachingStart}
-      onLoadMoreAfter={result.loadMore} hasMoreAfter={!result.isReachingEnd}
+      <ListPage
+        orders={result.data.orders.map((o) => ({ ...o, id: o.order_id }))}
+        onLoadMoreBefore={result.loadMorePrev}
+        hasMoreBefore={!result.isReachingStart}
+        onLoadMoreAfter={result.loadMore}
+        hasMoreAfter={!result.isReachingEnd}
+        onSelectOrder={(order) => onSelect(order.id)}
+        onRefundOrder={(value) => setOrderToBeRefunded(value)}
+        errorOrderId={errorOrderId}
+        isAllActive={isAllActive}
+        isNotWiredActive={isNotWiredActive}
+        isPaidActive={isPaidActive}
+        isRefundedActive={isRefundedActive}
+        jumpToDate={filter.date}
+        onCopyURL={(id) =>
+          getPaymentURL(id).then((resp) => copyToClipboard(resp.data))
+        }
+        onCreate={onCreate}
+        onSearchOrderById={testIfOrderExistAndSelect}
+        onSelectDate={setNewDate}
+        onShowAll={() => setFilter({})}
+        onShowPaid={() => setFilter({ paid: "yes" })}
+        onShowRefunded={() => setFilter({ refunded: "yes" })}
+        onShowNotWired={() => setFilter({ wired: "no" })}
+      />
 
-      onSelectOrder={(order) => onSelect(order.id)}
-      onRefundOrder={(value) => setOrderToBeRefunded(value)}
-
-      errorOrderId={errorOrderId}
-      isAllActive={isAllActive}
-      isNotWiredActive={isNotWiredActive}
-      isPaidActive={isPaidActive}
-      isRefundedActive={isRefundedActive}
-      jumpToDate={filter.date}
-      onCopyURL={(id) => getPaymentURL(id).then((resp) => copyToClipboard(resp.data))}
-
-      onCreate={onCreate}
-      onSearchOrderById={testIfOrderExistAndSelect}
-      onSelectDate={setNewDate}
-      onShowAll={() => setFilter({})}
-      onShowPaid={() => setFilter({ paid: 'yes' })}
-      onShowRefunded={() => setFilter({ refunded: 'yes' })}
-      onShowNotWired={() => setFilter({ wired: 'no' })}
-
-    />
-
-    {orderToBeRefunded && <RefundModalForTable
-      id={orderToBeRefunded.order_id}
-      onCancel={() => setOrderToBeRefunded(undefined)}
-      onConfirm={(value) => refundOrder(orderToBeRefunded.order_id, value)
-        .then(() => setNotif({
-          message: i18n`refund created successfully`,
-          type: "SUCCESS"
-        }))
-        .catch((error) => setNotif({
-          message: i18n`could not create the refund`,
-          type: "ERROR",
-          description: error.message
-        }))
-        .then(() => setOrderToBeRefunded(undefined))}
-      onLoadError={(error) => {
-        setNotif({
-          message: i18n`could not create the refund`,
-          type: "ERROR",
-          description: error.message
-        });
-        setOrderToBeRefunded(undefined);
-        return <div />;
-      }}
-      onUnauthorized={onUnauthorized}
-      onNotFound={() => {
-        setNotif({
-          message: i18n`could not get the order to refund`,
-          type: "ERROR",
-          // description: error.message
-        });
-        setOrderToBeRefunded(undefined);
-        return <div />;
-      }} />}
-  </Fragment>
+      {orderToBeRefunded && (
+        <RefundModalForTable
+          id={orderToBeRefunded.order_id}
+          onCancel={() => setOrderToBeRefunded(undefined)}
+          onConfirm={(value) =>
+            refundOrder(orderToBeRefunded.order_id, value)
+              .then(() =>
+                setNotif({
+                  message: i18n`refund created successfully`,
+                  type: "SUCCESS",
+                }),
+              )
+              .catch((error) =>
+                setNotif({
+                  message: i18n`could not create the refund`,
+                  type: "ERROR",
+                  description: error.message,
+                }),
+              )
+              .then(() => setOrderToBeRefunded(undefined))
+          }
+          onLoadError={(error) => {
+            setNotif({
+              message: i18n`could not create the refund`,
+              type: "ERROR",
+              description: error.message,
+            });
+            setOrderToBeRefunded(undefined);
+            return <div />;
+          }}
+          onUnauthorized={onUnauthorized}
+          onNotFound={() => {
+            setNotif({
+              message: i18n`could not get the order to refund`,
+              type: "ERROR",
+              // description: error.message
+            });
+            setOrderToBeRefunded(undefined);
+            return <div />;
+          }}
+        />
+      )}
+    </Fragment>
+  );
 }
 
 interface RefundProps {
@@ -151,21 +182,30 @@ interface RefundProps {
   onConfirm: (m: MerchantBackend.Orders.RefundRequest) => void;
 }
 
-function RefundModalForTable({ id, onUnauthorized, onLoadError, onNotFound, onConfirm, onCancel }: RefundProps) {
+function RefundModalForTable({
+  id,
+  onUnauthorized,
+  onLoadError,
+  onNotFound,
+  onConfirm,
+  onCancel,
+}: RefundProps) {
   const result = useOrderDetails(id);
 
-  if (result.clientError && result.isUnauthorized) return onUnauthorized()
-  if (result.clientError && result.isNotfound) return onNotFound()
-  if (result.loading) return <Loading />
-  if (!result.ok) return onLoadError(result)
+  if (result.clientError && result.isUnauthorized) return onUnauthorized();
+  if (result.clientError && result.isNotfound) return onNotFound();
+  if (result.loading) return <Loading />;
+  if (!result.ok) return onLoadError(result);
 
-  return <RefundModal
-    order={result.data}
-    onCancel={onCancel}
-    onConfirm={onConfirm}
-  />
+  return (
+    <RefundModal
+      order={result.data}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
+  );
 }
 
 async function copyToClipboard(text: string) {
-  return navigator.clipboard.writeText(text)
+  return navigator.clipboard.writeText(text);
 }

@@ -15,21 +15,21 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createContext } from 'preact'
-import { useContext } from 'preact/hooks'
+import { createContext } from "preact";
+import { useContext } from "preact/hooks";
 
 interface Type {
   id: string;
   token?: string;
   admin?: boolean;
-  changeToken: (t?:string) => void;
+  changeToken: (t?: string) => void;
 }
 
-const Context = createContext<Type>({} as any)
+const Context = createContext<Type>({} as any);
 
-export const InstanceContextProvider = Context.Provider
+export const InstanceContextProvider = Context.Provider;
 export const useInstanceContext = (): Type => useContext(Context);

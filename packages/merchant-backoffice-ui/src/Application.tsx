@@ -15,95 +15,125 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode } from 'preact';
-import { route } from 'preact-router';
+import { h, VNode } from "preact";
+import { route } from "preact-router";
 import { useMemo } from "preact/hooks";
 import { ApplicationReadyRoutes } from "./ApplicationReadyRoutes.js";
 import { Loading } from "./components/exception/loading.js";
-import { NotificationCard, NotYetReadyAppMenu } from "./components/menu/index.js";
-import { BackendContextProvider, useBackendContext } from './context/backend.js';
-import { ConfigContextProvider } from './context/config.js';
-import { TranslationProvider } from './context/translation.js';
+import {
+  NotificationCard,
+  NotYetReadyAppMenu,
+} from "./components/menu/index.js";
+import {
+  BackendContextProvider,
+  useBackendContext,
+} from "./context/backend.js";
+import { ConfigContextProvider } from "./context/config.js";
+import { TranslationProvider } from "./context/translation.js";
 import { useBackendConfig } from "./hooks/backend.js";
-import { useTranslator } from './i18n/index.js';
-import LoginPage from './paths/login/index.js';
+import { useTranslator } from "./i18n/index.js";
+import LoginPage from "./paths/login/index.js";
 
 export function Application(): VNode {
   return (
     // <FetchContextProvider>
-      <BackendContextProvider>
-        <TranslationProvider>
-          <ApplicationStatusRoutes />
-        </TranslationProvider>
-      </BackendContextProvider>
+    <BackendContextProvider>
+      <TranslationProvider>
+        <ApplicationStatusRoutes />
+      </TranslationProvider>
+    </BackendContextProvider>
     // </FetchContextProvider>
   );
 }
 
 function ApplicationStatusRoutes(): VNode {
-  const { updateLoginStatus, triedToLog } = useBackendContext()
+  const { updateLoginStatus, triedToLog } = useBackendContext();
   const result = useBackendConfig();
-  const i18n = useTranslator()
+  const i18n = useTranslator();
 
   const updateLoginInfoAndGoToRoot = (url: string, token?: string) => {
-    updateLoginStatus(url, token)
-    route('/')
-  }
+    updateLoginStatus(url, token);
+    route("/");
+  };
 
-  const { currency, version } = result.ok ? result.data : { currency: 'unknown', version: 'unknown' }
-  const ctx = useMemo(() => ({ currency, version }), [currency, version])
+  const { currency, version } = result.ok
+    ? result.data
+    : { currency: "unknown", version: "unknown" };
+  const ctx = useMemo(() => ({ currency, version }), [currency, version]);
 
   if (!triedToLog) {
-    return <div id="app">
-      <NotYetReadyAppMenu title="Welcome!" />
-      <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
-    </div>
+    return (
+      <div id="app">
+        <NotYetReadyAppMenu title="Welcome!" />
+        <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
+      </div>
+    );
   }
 
-  if (result.clientError && result.isUnauthorized) return <div id="app">
-    <NotYetReadyAppMenu title="Login" />
-    <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
-  </div>
+  if (result.clientError && result.isUnauthorized)
+    return (
+      <div id="app">
+        <NotYetReadyAppMenu title="Login" />
+        <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
+      </div>
+    );
 
-  if (result.clientError && result.isNotfound) return <div id="app">
-    <NotYetReadyAppMenu title="Error" />
-    <NotificationCard notification={{
-      message: i18n`Server not found`,
-      type: 'ERROR',
-      description: `Check your url`,
-    }} />
-    <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
-  </div>
+  if (result.clientError && result.isNotfound)
+    return (
+      <div id="app">
+        <NotYetReadyAppMenu title="Error" />
+        <NotificationCard
+          notification={{
+            message: i18n`Server not found`,
+            type: "ERROR",
+            description: `Check your url`,
+          }}
+        />
+        <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
+      </div>
+    );
 
-  if (result.serverError) return <div id="app">
-    <NotYetReadyAppMenu title="Error" />
-    <NotificationCard notification={{
-      message: i18n`Couldn't access the server`,
-      type: 'ERROR',
-      description: i18n`Got message ${result.message} from ${result.info?.url}`,
-    }} />
-    <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
-  </div>
+  if (result.serverError)
+    return (
+      <div id="app">
+        <NotYetReadyAppMenu title="Error" />
+        <NotificationCard
+          notification={{
+            message: i18n`Couldn't access the server`,
+            type: "ERROR",
+            description: i18n`Got message ${result.message} from ${result.info?.url}`,
+          }}
+        />
+        <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
+      </div>
+    );
 
-  if (result.loading) return <Loading />
+  if (result.loading) return <Loading />;
 
-  if (!result.ok) return <div id="app">
-    <NotYetReadyAppMenu title="Error" />
-    <NotificationCard notification={{
-      message: i18n`Unexpected Error`,
-      type: 'ERROR',
-      description: i18n`Got message ${result.message} from ${result.info?.url}`,
-    }} />
-    <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
-  </div>
+  if (!result.ok)
+    return (
+      <div id="app">
+        <NotYetReadyAppMenu title="Error" />
+        <NotificationCard
+          notification={{
+            message: i18n`Unexpected Error`,
+            type: "ERROR",
+            description: i18n`Got message ${result.message} from ${result.info?.url}`,
+          }}
+        />
+        <LoginPage onConfirm={updateLoginInfoAndGoToRoot} />
+      </div>
+    );
 
-  return <div id="app" class="has-navbar-fixed-top">
-    <ConfigContextProvider value={ctx}>
-      <ApplicationReadyRoutes />
-    </ConfigContextProvider>
-  </div>
+  return (
+    <div id="app" class="has-navbar-fixed-top">
+      <ConfigContextProvider value={ctx}>
+        <ApplicationReadyRoutes />
+      </ConfigContextProvider>
+    </div>
+  );
 }

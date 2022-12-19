@@ -25,17 +25,20 @@ import { MerchantBackend } from "../declaration.js";
 import { useBackendContext } from "../context/backend.js";
 import { useEffect, useState } from "preact/hooks";
 import { DEFAULT_REQUEST_TIMEOUT } from "../utils/constants.js";
-import { axiosHandler, removeAxiosCancelToken } from "../utils/switchableAxios.js";
+import {
+  axiosHandler,
+  removeAxiosCancelToken,
+} from "../utils/switchableAxios.js";
 
 export function useMatchMutate(): (
   re: RegExp,
-  value?: unknown
+  value?: unknown,
 ) => Promise<any> {
   const { cache, mutate } = useSWRConfig();
 
   if (!(cache instanceof Map)) {
     throw new Error(
-      "matchMutate requires the cache provider to be a Map instance"
+      "matchMutate requires the cache provider to be a Map instance",
     );
   }
 
@@ -154,7 +157,7 @@ interface RequestOptions {
 function buildRequestOk<T>(
   res: AxiosResponse<T>,
   url: string,
-  hasToken: boolean
+  hasToken: boolean,
 ): HttpResponseOk<T> {
   return {
     ok: true,
@@ -177,7 +180,7 @@ function buildRequestOk<T>(
 function buildRequestFailed(
   ex: AxiosError<MerchantBackend.ErrorDetail>,
   url: string,
-  hasToken: boolean
+  hasToken: boolean,
 ):
   | HttpResponseClientError
   | HttpResponseServerError
@@ -236,14 +239,14 @@ export function cancelPendingRequest(): void {
 }
 
 export function isAxiosError<T>(
-  error: AxiosError | any
+  error: AxiosError | any,
 ): error is AxiosError<T> {
   return error && error.isAxiosError;
 }
 
 export async function request<T>(
   url: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<HttpResponseOk<T>> {
   const headers = options.token
     ? { Authorization: `Bearer ${options.token}` }
@@ -273,7 +276,7 @@ export async function request<T>(
 export function multiFetcher<T>(
   urls: string[],
   token: string,
-  backend: string
+  backend: string,
 ): Promise<HttpResponseOk<T>[]> {
   return Promise.all(urls.map((url) => fetcher<T>(url, token, backend)));
 }
@@ -281,7 +284,7 @@ export function multiFetcher<T>(
 export function fetcher<T>(
   url: string,
   token: string,
-  backend: string
+  backend: string,
 ): Promise<HttpResponseOk<T>> {
   return request<T>(`${backend}${url}`, { token });
 }

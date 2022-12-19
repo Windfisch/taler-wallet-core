@@ -28,7 +28,7 @@ import {
 
 interface InstanceAPI {
   updateInstance: (
-    data: MerchantBackend.Instances.InstanceReconfigurationMessage
+    data: MerchantBackend.Instances.InstanceReconfigurationMessage,
   ) => Promise<void>;
   deleteInstance: () => Promise<void>;
   clearToken: () => Promise<void>;
@@ -40,7 +40,7 @@ export function useAdminAPI(): AdminAPI {
   const mutateAll = useMatchMutate();
 
   const createInstance = async (
-    instance: MerchantBackend.Instances.InstanceConfigurationMessage
+    instance: MerchantBackend.Instances.InstanceConfigurationMessage,
   ): Promise<void> => {
     await request(`${url}/management/instances`, {
       method: "post",
@@ -77,7 +77,7 @@ export function useAdminAPI(): AdminAPI {
 
 export interface AdminAPI {
   createInstance: (
-    data: MerchantBackend.Instances.InstanceConfigurationMessage
+    data: MerchantBackend.Instances.InstanceConfigurationMessage,
   ) => Promise<void>;
   deleteInstance: (id: string) => Promise<void>;
   purgeInstance: (id: string) => Promise<void>;
@@ -88,7 +88,7 @@ export function useManagementAPI(instanceId: string): InstanceAPI {
   const { url, token, updateLoginStatus } = useBackendContext();
 
   const updateInstance = async (
-    instance: MerchantBackend.Instances.InstanceReconfigurationMessage
+    instance: MerchantBackend.Instances.InstanceReconfigurationMessage,
   ): Promise<void> => {
     await request(`${url}/management/instances/${instanceId}`, {
       method: "patch",
@@ -125,7 +125,7 @@ export function useManagementAPI(instanceId: string): InstanceAPI {
       data: { method: "token", token: newToken },
     });
 
-    updateLoginStatus(url, newToken)
+    updateLoginStatus(url, newToken);
     mutateAll(/\/management\/instances/);
   };
 
@@ -134,7 +134,11 @@ export function useManagementAPI(instanceId: string): InstanceAPI {
 
 export function useInstanceAPI(): InstanceAPI {
   const { mutate } = useSWRConfig();
-  const { url: baseUrl, token: adminToken, updateLoginStatus } = useBackendContext();
+  const {
+    url: baseUrl,
+    token: adminToken,
+    updateLoginStatus,
+  } = useBackendContext();
   const { token: instanceToken, id, admin } = useInstanceContext();
 
   const { url, token } = !admin
@@ -142,7 +146,7 @@ export function useInstanceAPI(): InstanceAPI {
     : { url: `${baseUrl}/instances/${id}`, token: instanceToken };
 
   const updateInstance = async (
-    instance: MerchantBackend.Instances.InstanceReconfigurationMessage
+    instance: MerchantBackend.Instances.InstanceReconfigurationMessage,
   ): Promise<void> => {
     await request(`${url}/private/`, {
       method: "patch",
@@ -181,7 +185,7 @@ export function useInstanceAPI(): InstanceAPI {
       data: { method: "token", token: newToken },
     });
 
-    updateLoginStatus(baseUrl, newToken)
+    updateLoginStatus(baseUrl, newToken);
     mutate([`/private/`, token, url], null);
   };
 
@@ -252,7 +256,7 @@ export function useInstanceKYCDetails(): HttpResponse<KYCStatus> {
 }
 
 export function useManagedInstanceDetails(
-  instanceId: string
+  instanceId: string,
 ): HttpResponse<MerchantBackend.Instances.QueryInstancesResponse> {
   const { url, token } = useBackendContext();
 

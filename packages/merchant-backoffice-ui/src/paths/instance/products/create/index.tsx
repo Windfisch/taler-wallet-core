@@ -15,41 +15,46 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { Fragment, h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
+import { Fragment, h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { useProductAPI } from "../../../../hooks/product.js";
-import { useTranslator } from '../../../../i18n/index.js';
+import { useTranslator } from "../../../../i18n/index.js";
 import { Notification } from "../../../../utils/types.js";
 import { CreatePage } from "./CreatePage.js";
 
-export type Entity = MerchantBackend.Products.ProductAddDetail
+export type Entity = MerchantBackend.Products.ProductAddDetail;
 interface Props {
   onBack?: () => void;
   onConfirm: () => void;
 }
 export default function CreateProduct({ onConfirm, onBack }: Props): VNode {
-  const { createProduct } = useProductAPI()
-  const [notif, setNotif] = useState<Notification | undefined>(undefined)
-  const i18n = useTranslator()
-  
-  return <Fragment>
-    <NotificationCard notification={notif} />
-    <CreatePage
-      onBack={onBack}
-      onCreate={(request: MerchantBackend.Products.ProductAddDetail) => {
-        return createProduct(request).then(() => onConfirm()).catch((error) => {
-          setNotif({
-            message: i18n`could not create product`,
-            type: "ERROR",
-            description: error.message
-          })
-        })
-      }} />
-  </Fragment>
+  const { createProduct } = useProductAPI();
+  const [notif, setNotif] = useState<Notification | undefined>(undefined);
+  const i18n = useTranslator();
+
+  return (
+    <Fragment>
+      <NotificationCard notification={notif} />
+      <CreatePage
+        onBack={onBack}
+        onCreate={(request: MerchantBackend.Products.ProductAddDetail) => {
+          return createProduct(request)
+            .then(() => onConfirm())
+            .catch((error) => {
+              setNotif({
+                message: i18n`could not create product`,
+                type: "ERROR",
+                description: error.message,
+              });
+            });
+        }}
+      />
+    </Fragment>
+  );
 }

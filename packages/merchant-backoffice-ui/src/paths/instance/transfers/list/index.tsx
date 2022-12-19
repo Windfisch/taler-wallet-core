@@ -15,12 +15,12 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
+import { h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { Loading } from "../../../../components/exception/loading.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { HttpError } from "../../../../hooks/backend.js";
@@ -35,51 +35,65 @@ interface Props {
   onCreate: () => void;
 }
 interface Form {
-  verified?: 'yes' | 'no';
+  verified?: "yes" | "no";
   payto_uri?: string;
 }
 
-export default function ListTransfer({ onUnauthorized, onLoadError, onCreate, onNotFound }: Props): VNode {
-  const [form, setForm] = useState<Form>({ payto_uri: '' })
-  const setFilter = (s?: 'yes' | 'no') => setForm({ ...form, verified: s })
+export default function ListTransfer({
+  onUnauthorized,
+  onLoadError,
+  onCreate,
+  onNotFound,
+}: Props): VNode {
+  const [form, setForm] = useState<Form>({ payto_uri: "" });
+  const setFilter = (s?: "yes" | "no") => setForm({ ...form, verified: s });
 
-  const [position, setPosition] = useState<string | undefined>(undefined)
+  const [position, setPosition] = useState<string | undefined>(undefined);
 
-  const instance = useInstanceDetails()
-  const accounts = !instance.ok ? [] : instance.data.accounts.map(a => a.payto_uri)
+  const instance = useInstanceDetails();
+  const accounts = !instance.ok
+    ? []
+    : instance.data.accounts.map((a) => a.payto_uri);
 
-  const isVerifiedTransfers = form.verified === 'yes'
-  const isNonVerifiedTransfers = form.verified === 'no'
-  const isAllTransfers = form.verified === undefined
+  const isVerifiedTransfers = form.verified === "yes";
+  const isNonVerifiedTransfers = form.verified === "no";
+  const isAllTransfers = form.verified === undefined;
 
-  const result = useInstanceTransfers({
-    position,
-    payto_uri: form.payto_uri === '' ? undefined : form.payto_uri,
-    verified: form.verified,
-  }, (id) => setPosition(id))
+  const result = useInstanceTransfers(
+    {
+      position,
+      payto_uri: form.payto_uri === "" ? undefined : form.payto_uri,
+      verified: form.verified,
+    },
+    (id) => setPosition(id),
+  );
 
-  if (result.clientError && result.isUnauthorized) return onUnauthorized()
-  if (result.clientError && result.isNotfound) return onNotFound()
-  if (result.loading) return <Loading />
-  if (!result.ok) return onLoadError(result)
+  if (result.clientError && result.isUnauthorized) return onUnauthorized();
+  if (result.clientError && result.isNotfound) return onNotFound();
+  if (result.loading) return <Loading />;
+  if (!result.ok) return onLoadError(result);
 
-  return <ListPage
-    accounts={accounts}
-    transfers={result.data.transfers}
-    onLoadMoreBefore={result.isReachingStart ? result.loadMorePrev : undefined}
-    onLoadMoreAfter={result.isReachingEnd ? result.loadMore : undefined}
-    onCreate={onCreate} 
-    onDelete={() => {null}}
-    // position={position} setPosition={setPosition}
-    onShowAll={() => setFilter(undefined)}
-    onShowUnverified={() => setFilter('no')}
-    onShowVerified={() => setFilter('yes')}
-    isAllTransfers={isAllTransfers}
-    isVerifiedTransfers={isVerifiedTransfers}
-    isNonVerifiedTransfers={isNonVerifiedTransfers}
-    payTo={form.payto_uri}
-    onChangePayTo={(p) => setForm(v => ({ ...v, payto_uri: p }))}
-  />
-
+  return (
+    <ListPage
+      accounts={accounts}
+      transfers={result.data.transfers}
+      onLoadMoreBefore={
+        result.isReachingStart ? result.loadMorePrev : undefined
+      }
+      onLoadMoreAfter={result.isReachingEnd ? result.loadMore : undefined}
+      onCreate={onCreate}
+      onDelete={() => {
+        null;
+      }}
+      // position={position} setPosition={setPosition}
+      onShowAll={() => setFilter(undefined)}
+      onShowUnverified={() => setFilter("no")}
+      onShowVerified={() => setFilter("yes")}
+      isAllTransfers={isAllTransfers}
+      isVerifiedTransfers={isVerifiedTransfers}
+      isNonVerifiedTransfers={isNonVerifiedTransfers}
+      payTo={form.payto_uri}
+      onChangePayTo={(p) => setForm((v) => ({ ...v, payto_uri: p }))}
+    />
+  );
 }
-

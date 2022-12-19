@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { h, VNode } from "preact";
 import { MessageType, Notification } from "../../utils/types.js";
@@ -29,24 +29,37 @@ interface Props {
 
 function messageStyle(type: MessageType): string {
   switch (type) {
-    case "INFO": return "message is-info";
-    case "WARN": return "message is-warning";
-    case "ERROR": return "message is-danger";
-    case "SUCCESS": return "message is-success";
-    default: return "message"
+    case "INFO":
+      return "message is-info";
+    case "WARN":
+      return "message is-warning";
+    case "ERROR":
+      return "message is-danger";
+    case "SUCCESS":
+      return "message is-success";
+    default:
+      return "message";
   }
 }
 
-export function Notifications({ notifications, removeNotification }: Props): VNode {
-  return <div class="toast">
-    {notifications.map((n,i) => <article key={i} class={messageStyle(n.type)}>
-      <div class="message-header">
-        <p>{n.message}</p>
-        <button class="delete" onClick={() => removeNotification && removeNotification(n)} />
-      </div>
-      {n.description && <div class="message-body">
-        {n.description}
-      </div>}
-    </article>)}
-  </div>
+export function Notifications({
+  notifications,
+  removeNotification,
+}: Props): VNode {
+  return (
+    <div class="toast">
+      {notifications.map((n, i) => (
+        <article key={i} class={messageStyle(n.type)}>
+          <div class="message-header">
+            <p>{n.message}</p>
+            <button
+              class="delete"
+              onClick={() => removeNotification && removeNotification(n)}
+            />
+          </div>
+          {n.description && <div class="message-body">{n.description}</div>}
+        </article>
+      ))}
+    </div>
+  );
 }

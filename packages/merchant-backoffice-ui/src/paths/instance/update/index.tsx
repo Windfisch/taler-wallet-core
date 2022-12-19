@@ -48,7 +48,7 @@ export default function Update(props: Props): VNode {
 
 export function AdminUpdate(props: Props & { instanceId: string }): VNode {
   const { updateInstance, clearToken, setNewToken } = useManagementAPI(
-    props.instanceId
+    props.instanceId,
   );
   const result = useManagedInstanceDetails(props.instanceId);
   return CommonUpdate(props, result, updateInstance, clearToken, setNewToken);
@@ -66,7 +66,7 @@ function CommonUpdate(
   result: HttpResponse<MerchantBackend.Instances.QueryInstancesResponse>,
   updateInstance: any,
   clearToken: any,
-  setNewToken: any
+  setNewToken: any,
 ): VNode {
   const { changeToken } = useInstanceContext();
   const [notif, setNotif] = useState<Notification | undefined>(undefined);
@@ -85,7 +85,7 @@ function CommonUpdate(
         isLoading={false}
         selected={result.data}
         onUpdate={(
-          d: MerchantBackend.Instances.InstanceReconfigurationMessage
+          d: MerchantBackend.Instances.InstanceReconfigurationMessage,
         ): Promise<void> => {
           return updateInstance(d)
             .then(onConfirm)
@@ -94,11 +94,11 @@ function CommonUpdate(
                 message: i18n`Failed to create instance`,
                 type: "ERROR",
                 description: error.message,
-              })
+              }),
             );
         }}
         onChangeAuth={(
-          d: MerchantBackend.Instances.InstanceAuthConfigurationMessage
+          d: MerchantBackend.Instances.InstanceAuthConfigurationMessage,
         ): Promise<void> => {
           const apiCall =
             d.method === "external" ? clearToken() : setNewToken(d.token!);

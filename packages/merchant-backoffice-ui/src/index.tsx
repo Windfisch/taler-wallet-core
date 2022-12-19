@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {Application} from "./Application.js";
+import { Application } from "./Application.js";
 
 import { h, render } from "preact";
 import "./scss/main.scss";

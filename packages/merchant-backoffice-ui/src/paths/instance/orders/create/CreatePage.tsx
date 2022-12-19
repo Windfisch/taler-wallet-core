@@ -166,7 +166,7 @@ export function CreatePage({
         : value.payments.wire_transfer_deadline &&
           isBefore(
             value.payments.wire_transfer_deadline,
-            value.payments.refund_deadline
+            value.payments.refund_deadline,
           )
         ? i18n`wire transfer deadline cannot be before refund deadline`
         : undefined,
@@ -177,7 +177,7 @@ export function CreatePage({
         : value.payments.wire_transfer_deadline &&
           isBefore(
             value.payments.wire_transfer_deadline,
-            value.payments.pay_deadline
+            value.payments.pay_deadline,
           )
         ? i18n`wire transfer deadline cannot be before pay deadline`
         : undefined,
@@ -189,7 +189,7 @@ export function CreatePage({
         ? i18n`should have a refund deadline`
         : !isAfter(
             value.payments.refund_deadline,
-            value.payments.auto_refund_deadline
+            value.payments.auto_refund_deadline,
           )
         ? i18n`auto refund cannot be after refund deadline`
         : undefined,
@@ -203,7 +203,7 @@ export function CreatePage({
     }),
   };
   const hasErrors = Object.keys(errors).some(
-    (k) => (errors as any)[k] !== undefined
+    (k) => (errors as any)[k] !== undefined,
   );
 
   const submit = (): void => {
@@ -225,7 +225,7 @@ export function CreatePage({
         wire_transfer_deadline: value.payments.wire_transfer_deadline
           ? {
               t_s: Math.floor(
-                value.payments.wire_transfer_deadline.getTime() / 1000
+                value.payments.wire_transfer_deadline.getTime() / 1000,
               ),
             }
           : undefined,
@@ -237,7 +237,7 @@ export function CreatePage({
         auto_refund: value.payments.auto_refund_deadline
           ? {
               d_us: Math.floor(
-                value.payments.auto_refund_deadline.getTime() * 1000
+                value.payments.auto_refund_deadline.getTime() * 1000,
               ),
             }
           : undefined,
@@ -264,7 +264,7 @@ export function CreatePage({
 
   const addProductToTheInventoryList = (
     product: MerchantBackend.Products.ProductDetail & WithId,
-    quantity: number
+    quantity: number,
   ) => {
     valueHandler((v) => {
       const inventoryProducts = { ...v.inventoryProducts };
@@ -332,13 +332,13 @@ export function CreatePage({
 
   const discountOrRise = rate(
     value.pricing?.order_price || `${config.currency}:0`,
-    totalAsString
+    totalAsString,
   );
 
   const minAgeByProducts = allProducts.reduce(
     (cur, prev) =>
       !prev.minimum_age || cur > prev.minimum_age ? cur : prev.minimum_age,
-    0
+    0,
   );
   return (
     <div>
@@ -415,7 +415,7 @@ export function CreatePage({
                       discountOrRise > 0 &&
                       (discountOrRise < 1
                         ? `discount of %${Math.round(
-                            (1 - discountOrRise) * 100
+                            (1 - discountOrRise) * 100,
                           )}`
                         : `rise of %${Math.round((discountOrRise - 1) * 100)}`)
                     }

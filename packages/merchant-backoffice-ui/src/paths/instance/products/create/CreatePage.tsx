@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { h, VNode } from "preact";
 import { AsyncButton } from "../../../../components/exception/AsyncButton.js";
@@ -26,40 +26,55 @@ import { MerchantBackend } from "../../../../declaration.js";
 import { useListener } from "../../../../hooks/listener.js";
 import { Translate, useTranslator } from "../../../../i18n/index.js";
 
-type Entity = MerchantBackend.Products.ProductAddDetail & { product_id: string}
+type Entity = MerchantBackend.Products.ProductAddDetail & {
+  product_id: string;
+};
 
 interface Props {
   onCreate: (d: Entity) => Promise<void>;
   onBack?: () => void;
 }
 
-
 export function CreatePage({ onCreate, onBack }: Props): VNode {
+  const [submitForm, addFormSubmitter] = useListener<Entity | undefined>(
+    (result) => {
+      if (result) return onCreate(result);
+      return Promise.reject();
+    },
+  );
 
-  const [submitForm, addFormSubmitter] = useListener<Entity | undefined>((result) => {
-    if (result) return onCreate(result)
-    return Promise.reject()
-  })
+  const i18n = useTranslator();
 
-  const i18n = useTranslator()
+  return (
+    <div>
+      <section class="section is-main-section">
+        <div class="columns">
+          <div class="column" />
+          <div class="column is-four-fifths">
+            <ProductForm onSubscribe={addFormSubmitter} />
 
-  return <div>
-    <section class="section is-main-section">
-      <div class="columns">
-        <div class="column" />
-        <div class="column is-four-fifths">
-          <ProductForm onSubscribe={addFormSubmitter} />
-
-          <div class="buttons is-right mt-5">
-            {onBack && <button class="button" onClick={onBack} ><Translate>Cancel</Translate></button>}
-            <AsyncButton onClick={submitForm} data-tooltip={
-              !submitForm ? i18n`Need to complete marked fields` : 'confirm operation'
-            } disabled={!submitForm}><Translate>Confirm</Translate></AsyncButton>
+            <div class="buttons is-right mt-5">
+              {onBack && (
+                <button class="button" onClick={onBack}>
+                  <Translate>Cancel</Translate>
+                </button>
+              )}
+              <AsyncButton
+                onClick={submitForm}
+                data-tooltip={
+                  !submitForm
+                    ? i18n`Need to complete marked fields`
+                    : "confirm operation"
+                }
+                disabled={!submitForm}
+              >
+                <Translate>Confirm</Translate>
+              </AsyncButton>
+            </div>
           </div>
-
+          <div class="column" />
         </div>
-        <div class="column" />
-      </div>
-    </section>
-  </div>
+      </section>
+    </div>
+  );
 }

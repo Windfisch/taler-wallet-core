@@ -17,37 +17,41 @@
 import { WithId } from "../declaration.js";
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 export interface Actions<T extends WithId> {
   element: T;
-  type: 'DELETE' | 'UPDATE';
+  type: "DELETE" | "UPDATE";
 }
 
 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
-export function buildActions<T extends WithId>(instances: T[], selected: string[], action: 'DELETE'): Actions<T>[] {
-  return selected.map(id => instances.find(i => i.id === id))
+export function buildActions<T extends WithId>(
+  instances: T[],
+  selected: string[],
+  action: "DELETE",
+): Actions<T>[] {
+  return selected
+    .map((id) => instances.find((i) => i.id === id))
     .filter(notEmpty)
-    .map(id => ({ element: id, type: action }))
+    .map((id) => ({ element: id, type: action }));
 }
 
 /**
  * For any object or array, return the same object if is not empty.
- * not empty: 
+ * not empty:
  *  - for arrays: at least one element not undefined
  *  - for objects: at least one property not undefined
- * @param obj 
- * @returns 
+ * @param obj
+ * @returns
  */
-export function undefinedIfEmpty<T extends Record<string, unknown>|Array<unknown>>(obj: T): T | undefined {
-  if (obj === undefined) return undefined
-  return Object.values(obj).some((v) => v !== undefined)
-    ? obj
-    : undefined;
+export function undefinedIfEmpty<
+  T extends Record<string, unknown> | Array<unknown>,
+>(obj: T): T | undefined {
+  if (obj === undefined) return undefined;
+  return Object.values(obj).some((v) => v !== undefined) ? obj : undefined;
 }
-

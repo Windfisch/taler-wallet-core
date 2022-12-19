@@ -54,7 +54,7 @@ export default function Create({ onBack, onConfirm, forceId }: Props): VNode {
         onBack={onBack}
         forceId={forceId}
         onCreate={(
-          d: MerchantBackend.Instances.InstanceConfigurationMessage
+          d: MerchantBackend.Instances.InstanceConfigurationMessage,
         ) => {
           return createInstance(d)
             .then(() => {

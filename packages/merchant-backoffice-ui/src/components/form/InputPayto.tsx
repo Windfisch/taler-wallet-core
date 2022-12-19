@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { h, VNode } from "preact";
 import { InputArray } from "./InputArray.js";
 import { PAYTO_REGEX } from "../../utils/constants.js";
@@ -25,15 +25,28 @@ import { InputProps } from "./useField.js";
 
 export type Props<T> = InputProps<T>;
 
-const PAYTO_START_REGEX = /^payto:\/\//
+const PAYTO_START_REGEX = /^payto:\/\//;
 
-export function InputPayto<T>({ name, readonly, placeholder, tooltip, label, help }: Props<keyof T>): VNode {
-  return <InputArray<T> name={name} readonly={readonly} 
-    addonBefore="payto://" 
-    label={label} placeholder={placeholder} help={help} tooltip={tooltip}
-    isValid={(v) => v && PAYTO_REGEX.test(v) }
-    toStr={(v?: string) => !v ? '': v.replace(PAYTO_START_REGEX, '')}
-    fromStr={(v: string) => `payto://${v}` }
-  />
+export function InputPayto<T>({
+  name,
+  readonly,
+  placeholder,
+  tooltip,
+  label,
+  help,
+}: Props<keyof T>): VNode {
+  return (
+    <InputArray<T>
+      name={name}
+      readonly={readonly}
+      addonBefore="payto://"
+      label={label}
+      placeholder={placeholder}
+      help={help}
+      tooltip={tooltip}
+      isValid={(v) => v && PAYTO_REGEX.test(v)}
+      toStr={(v?: string) => (!v ? "" : v.replace(PAYTO_START_REGEX, ""))}
+      fromStr={(v: string) => `payto://${v}`}
+    />
+  );
 }
-

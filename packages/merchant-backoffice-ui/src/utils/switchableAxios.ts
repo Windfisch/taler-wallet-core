@@ -23,44 +23,51 @@ import axios, { AxiosPromise, AxiosRequestConfig } from "axios";
 
 export let removeAxiosCancelToken = false;
 
-export let axiosHandler = function doAxiosRequest(config: AxiosRequestConfig): AxiosPromise<any> {
-  return axios(config)
-}
+export let axiosHandler = function doAxiosRequest(
+  config: AxiosRequestConfig,
+): AxiosPromise<any> {
+  return axios(config);
+};
 
 /**
  * Set this backend library to testing mode.
  * Instead of calling the axios library the @handler will be called
- * 
- * @param handler callback that will mock axios 
+ *
+ * @param handler callback that will mock axios
  */
-export function setAxiosRequestAsTestingEnvironment(handler: AxiosHandler): void {
+export function setAxiosRequestAsTestingEnvironment(
+  handler: AxiosHandler,
+): void {
   removeAxiosCancelToken = true;
   axiosHandler = function defaultTestingHandler(config) {
-    const currentHanlder = listOfHandlersToUseOnce.shift()
+    const currentHanlder = listOfHandlersToUseOnce.shift();
     if (!currentHanlder) {
-      return handler(config)
+      return handler(config);
     }
 
-    return currentHanlder(config)
-  }
+    return currentHanlder(config);
+  };
 }
 
 type AxiosHandler = (config: AxiosRequestConfig) => AxiosPromise<any>;
-type AxiosArguments = { args: AxiosRequestConfig | undefined }
+type AxiosArguments = { args: AxiosRequestConfig | undefined };
 
-
-const listOfHandlersToUseOnce = new Array<AxiosHandler>()
+const listOfHandlersToUseOnce = new Array<AxiosHandler>();
 
 /**
- * 
+ *
  * @param handler mock function
  * @returns savedArgs
  */
-export function mockAxiosOnce(handler: AxiosHandler): { args: AxiosRequestConfig | undefined } {
-  const savedArgs: AxiosArguments = { args: undefined }
-  listOfHandlersToUseOnce.push((config: AxiosRequestConfig): AxiosPromise<any> => {
-    savedArgs.args = config;
-    return handler(config)
-  })
+export function mockAxiosOnce(handler: AxiosHandler): {
+  args: AxiosRequestConfig | undefined;
+} {
+  const savedArgs: AxiosArguments = { args: undefined };
+  listOfHandlersToUseOnce.push(
+    (config: AxiosRequestConfig): AxiosPromise<any> => {
+      savedArgs.args = config;
+      return handler(config);
+    },
+  );
   return savedArgs;
 }

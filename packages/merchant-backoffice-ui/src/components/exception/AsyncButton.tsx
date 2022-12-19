@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { ComponentChildren, h } from "preact";
 import { LoadingModal } from "../modal/index.js";
@@ -25,10 +25,10 @@ import { useAsync } from "../../hooks/async.js";
 import { Translate } from "../../i18n/index.js";
 
 type Props = {
-  children: ComponentChildren,
+  children: ComponentChildren;
   disabled: boolean;
   onClick?: () => Promise<void>;
-  [rest:string]: any,
+  [rest: string]: any;
 };
 
 export function AsyncButton({ onClick, disabled, children, ...rest }: Props) {
@@ -38,12 +38,18 @@ export function AsyncButton({ onClick, disabled, children, ...rest }: Props) {
     return <LoadingModal onCancel={cancel} />;
   }
   if (isLoading) {
-    return <button class="button"><Translate>Loading...</Translate></button>;
+    return (
+      <button class="button">
+        <Translate>Loading...</Translate>
+      </button>
+    );
   }
 
-  return <span {...rest}>
-    <button class="button is-success" onClick={request} disabled={disabled}>
-      {children}
-    </button>
-  </span>;
+  return (
+    <span {...rest}>
+      <button class="button is-success" onClick={request} disabled={disabled}>
+        {children}
+      </button>
+    </span>
+  );
 }

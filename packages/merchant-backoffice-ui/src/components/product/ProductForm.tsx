@@ -77,12 +77,12 @@ export function ProductForm({ onSubscribe, initial, alreadyExist }: Props) {
       errors = yupErrors.reduce(
         (prev, cur) =>
           !cur.path ? prev : { ...prev, [cur.path]: cur.message },
-        {}
+        {},
       );
     }
   }
   const hasErrors = Object.keys(errors).some(
-    (k) => (errors as any)[k] !== undefined
+    (k) => (errors as any)[k] !== undefined,
   );
 
   const submit = useCallback((): Entity | undefined => {

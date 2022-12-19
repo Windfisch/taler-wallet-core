@@ -15,44 +15,47 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, FunctionalComponent } from 'preact';
+import { h, VNode, FunctionalComponent } from "preact";
 import { CardTable as TestedComponent } from "./Table.js";
 
-
 export default {
-  title: 'Pages/Product/List',
+  title: "Pages/Product/List",
   component: TestedComponent,
   argTypes: {
-    onCreate: { action: 'onCreate' },
-    onSelect: { action: 'onSelect' },
-    onDelete: { action: 'onDelete' },
-    onUpdate: { action: 'onUpdate' },
+    onCreate: { action: "onCreate" },
+    onSelect: { action: "onSelect" },
+    onDelete: { action: "onDelete" },
+    onUpdate: { action: "onUpdate" },
   },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
-
 export const Example = createExample(TestedComponent, {
-  instances: [{
-    id: 'orderid',
-    description: 'description1',
-    description_i18n: {} as any,
-    image: '',
-    price: 'TESTKUDOS:10',
-    taxes: [],
-    total_lost: 10,
-    total_sold: 5,
-    total_stock: 15,
-    unit: 'bar',
-    address: {}
-  }]
+  instances: [
+    {
+      id: "orderid",
+      description: "description1",
+      description_i18n: {} as any,
+      image: "",
+      price: "TESTKUDOS:10",
+      taxes: [],
+      total_lost: 10,
+      total_sold: 5,
+      total_stock: 15,
+      unit: "bar",
+      address: {},
+    },
+  ],
 });

@@ -15,31 +15,32 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode, FunctionalComponent } from 'preact';
+import { h, VNode, FunctionalComponent } from "preact";
 import { CreatePage as TestedComponent } from "./CreatePage.js";
 
-
 export default {
-  title: 'Pages/Instance/Create',
+  title: "Pages/Instance/Create",
   component: TestedComponent,
   argTypes: {
-    onCreate: { action: 'onCreate' },
-    goBack: { action: 'goBack' },
-  }
+    onCreate: { action: "onCreate" },
+    goBack: { action: "goBack" },
+  },
 };
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
+function createExample<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+) {
+  const r = (args: any) => <Component {...args} />;
+  r.args = props;
+  return r;
 }
 
-export const Example = createExample(TestedComponent, {
-});
+export const Example = createExample(TestedComponent, {});
 // export const Example = (a: any): VNode => <CreatePage {...a} />;
 // Example.args = {
 //   isLoading: false

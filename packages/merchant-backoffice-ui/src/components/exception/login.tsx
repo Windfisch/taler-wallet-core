@@ -46,7 +46,7 @@ export function LoginModal({ onConfirm, withMessage }: Props): VNode {
   const { url: backendUrl, token: baseToken } = useBackendContext();
   const { admin, token: instanceToken } = useInstanceContext();
   const currentToken = getTokenValuePart(
-    !admin ? baseToken : instanceToken || ""
+    !admin ? baseToken : instanceToken || "",
   );
   const [token, setToken] = useState(currentToken);
 

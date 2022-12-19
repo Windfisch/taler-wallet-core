@@ -93,7 +93,7 @@ interface TranslateProps {
 
 function getTranslatedChildren(
   translation: string,
-  children: ComponentChildren
+  children: ComponentChildren,
 ): ComponentChild[] {
   const tr = translation.split(/%(\d+)\$s/);
   const childArray = children instanceof Array ? children : [children];
@@ -167,7 +167,7 @@ export function TranslateSwitch({ children, target }: TranslateSwitchProps) {
         if (child.type === TranslateSingular) {
           singular = child;
         }
-      }
+      },
     );
   }
   if (!singular || !plural) {

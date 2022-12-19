@@ -15,18 +15,18 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createContext } from 'preact'
-import { useContext } from 'preact/hooks'
+import { createContext } from "preact";
+import { useContext } from "preact/hooks";
 
 interface Type {
   currency: string;
   version: string;
 }
-const Context = createContext<Type>(null!)
+const Context = createContext<Type>(null!);
 
-export const ConfigContextProvider = Context.Provider
+export const ConfigContextProvider = Context.Provider;
 export const useConfigContext = (): Type => useContext(Context);

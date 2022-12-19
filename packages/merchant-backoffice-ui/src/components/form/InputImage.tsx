@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { ComponentChildren, h, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
 import { Translate } from "../../i18n/index.js";
@@ -30,65 +30,93 @@ export interface Props<T> extends InputProps<T> {
   children?: ComponentChildren;
 }
 
-export function InputImage<T>({ name, readonly, placeholder, tooltip, label, help, children, expand }: Props<keyof T>): VNode {
+export function InputImage<T>({
+  name,
+  readonly,
+  placeholder,
+  tooltip,
+  label,
+  help,
+  children,
+  expand,
+}: Props<keyof T>): VNode {
   const { error, value, onChange } = useField<T>(name);
 
-  const image = useRef<HTMLInputElement>(null)
+  const image = useRef<HTMLInputElement>(null);
 
-  const [sizeError, setSizeError] = useState(false)
+  const [sizeError, setSizeError] = useState(false);
 
-  return <div class="field is-horizontal">
-    <div class="field-label is-normal">
-      <label class="label">
-        {label}
-        {tooltip && <span class="icon has-tooltip-right" data-tooltip={tooltip}>
-          <i class="mdi mdi-information" />
-        </span>}
-      </label>
-    </div>
-    <div class="field-body is-flex-grow-3">
-      <div class="field">
-        <p class={expand ? "control is-expanded" : "control"}>
-          {value &&
-            <img src={value} style={{ width: 200, height: 200 }} onClick={() => image.current?.click()} />
-          }
-          <input
-            ref={image} style={{ display: 'none' }}
-            type="file" name={String(name)}
-            placeholder={placeholder} readonly={readonly}
-            onChange={e => {
-              const f: FileList | null = e.currentTarget.files
-              if (!f || f.length != 1) {
-                return onChange(undefined!)
-              }
-              if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
-                setSizeError(true)
-                return onChange(undefined!)
-              }
-              setSizeError(false)
-              return f[0].arrayBuffer().then(b => {
-                const b64 = btoa(
-                  new Uint8Array(b)
-                    .reduce((data, byte) => data + String.fromCharCode(byte), '')
-                )
-                return onChange(`data:${f[0].type};base64,${b64}` as any)
-              })
-            }} />
-          {help}
-          {children}
-        </p>
-        {error && <p class="help is-danger">{error}</p>}
-        {sizeError && <p class="help is-danger">
-          <Translate>Image should be smaller than 1 MB</Translate>
-        </p>}
-        {!value &&
-          <button class="button" onClick={() => image.current?.click()} ><Translate>Add</Translate></button>
-        }
-        {value &&
-          <button class="button" onClick={() => onChange(undefined!)} ><Translate>Remove</Translate></button>
-        }
+  return (
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label class="label">
+          {label}
+          {tooltip && (
+            <span class="icon has-tooltip-right" data-tooltip={tooltip}>
+              <i class="mdi mdi-information" />
+            </span>
+          )}
+        </label>
+      </div>
+      <div class="field-body is-flex-grow-3">
+        <div class="field">
+          <p class={expand ? "control is-expanded" : "control"}>
+            {value && (
+              <img
+                src={value}
+                style={{ width: 200, height: 200 }}
+                onClick={() => image.current?.click()}
+              />
+            )}
+            <input
+              ref={image}
+              style={{ display: "none" }}
+              type="file"
+              name={String(name)}
+              placeholder={placeholder}
+              readonly={readonly}
+              onChange={(e) => {
+                const f: FileList | null = e.currentTarget.files;
+                if (!f || f.length != 1) {
+                  return onChange(undefined!);
+                }
+                if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
+                  setSizeError(true);
+                  return onChange(undefined!);
+                }
+                setSizeError(false);
+                return f[0].arrayBuffer().then((b) => {
+                  const b64 = btoa(
+                    new Uint8Array(b).reduce(
+                      (data, byte) => data + String.fromCharCode(byte),
+                      "",
+                    ),
+                  );
+                  return onChange(`data:${f[0].type};base64,${b64}` as any);
+                });
+              }}
+            />
+            {help}
+            {children}
+          </p>
+          {error && <p class="help is-danger">{error}</p>}
+          {sizeError && (
+            <p class="help is-danger">
+              <Translate>Image should be smaller than 1 MB</Translate>
+            </p>
+          )}
+          {!value && (
+            <button class="button" onClick={() => image.current?.click()}>
+              <Translate>Add</Translate>
+            </button>
+          )}
+          {value && (
+            <button class="button" onClick={() => onChange(undefined!)}>
+              <Translate>Remove</Translate>
+            </button>
+          )}
+        </div>
       </div>
     </div>
-  </div>
+  );
 }
-

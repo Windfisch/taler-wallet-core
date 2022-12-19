@@ -15,12 +15,12 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h, VNode } from 'preact';
+import { h, VNode } from "preact";
 
-export default function UpdateTransfer():VNode {
-  return <div>order transfer page</div>
+export default function UpdateTransfer(): VNode {
+  return <div>order transfer page</div>;
 }

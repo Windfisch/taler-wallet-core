@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
+/**
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
@@ -23,12 +23,12 @@
   transition: $t 250ms ease-in-out 50ms;
 }
 
-@mixin icon-with-update-mark ($icon-base-width) {
+@mixin icon-with-update-mark($icon-base-width) {
   .icon {
     width: $icon-base-width;
 
     &.has-update-mark:after {
-      right: calc($icon-base-width / 2) - .85;
+      right: calc($icon-base-width / 2) - 0.85;
     }
   }
 }
