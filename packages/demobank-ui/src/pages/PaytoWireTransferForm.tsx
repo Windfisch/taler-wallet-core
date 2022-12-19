@@ -55,7 +55,7 @@ export function PaytoWireTransferForm({
 
   let parsedAmount = undefined;
 
-  const errorsWire = {
+  const errorsWire = undefinedIfEmpty({
     iban: !submitData?.iban
       ? i18n.str`Missing IBAN`
       : !/^[A-Z0-9]*$/.test(submitData.iban)
@@ -69,7 +69,7 @@ export function PaytoWireTransferForm({
       : Amounts.isZero(parsedAmount)
       ? i18n.str`Should be greater than 0`
       : undefined,
-  };
+  });
 
   if (!pageState.isRawPayto)
     return (
